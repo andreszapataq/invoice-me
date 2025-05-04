@@ -8,6 +8,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import { Settings } from "lucide-react";
 
 export default function Home() {
   return (
@@ -17,7 +18,9 @@ export default function Home() {
         <Sheet>
           <SheetTrigger asChild>
             {/* Este es el botón que abre el Sheet */}
-            <Button variant="outline">Configuración</Button>
+            <Button variant="outline" size="icon">
+              <Settings className="size-4" />
+            </Button>
           </SheetTrigger>
           {/* Este es el contenido del panel lateral */}
           <SheetContent side="left" className="p-6"> {/* <-- Aquí especificamos que salga de la izquierda */}
