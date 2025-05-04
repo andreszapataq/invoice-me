@@ -1,9 +1,41 @@
 import { Header } from "@/components/Header";
+import { Button } from "@/components/ui/button"; // Importar Button
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription, // Opcional
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 
 export default function Home() {
   return (
-    <div className="min-h-screen p-8 md:py-[90px] md:px-[190px]">
+    <main className="min-h-screen p-8 md:py-[90px] md:px-[190px]">
       <Header />
-    </div>
+      <div className="mt-15"> {/* Añade un margen superior si es necesario */}
+        <Sheet>
+          <SheetTrigger asChild>
+            {/* Este es el botón que abre el Sheet */}
+            <Button variant="outline">Configuración</Button>
+          </SheetTrigger>
+          {/* Este es el contenido del panel lateral */}
+          <SheetContent side="left" className="p-6"> {/* <-- Aquí especificamos que salga de la izquierda */}
+            <SheetHeader>
+              <SheetTitle>Menú</SheetTitle>
+              <SheetDescription>
+                Aquí puedes poner opciones o filtros.
+              </SheetDescription>
+            </SheetHeader>
+            <div className="p-4">
+              {/* Contenido del Sheet */}
+              <p>Contenido del menú lateral...</p>
+              {/* Por ejemplo, podrías poner aquí un formulario, filtros, etc. */}
+            </div>
+            {/* Puedes añadir un SheetFooter si lo necesitas */}
+          </SheetContent>
+        </Sheet>
+      </div>
+    </main>
   );
 }
