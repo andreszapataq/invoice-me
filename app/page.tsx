@@ -84,15 +84,14 @@ export default function Home() {
     <main className="min-h-screen p-8 md:py-[90px] md:px-[190px]">
       <Header />
 
-      {/* --- Fila de Controles Superiores --- */}
-      <div className="flex items-center justify-between py-4">
-        {/* Botón Configuración (Sheet + Tooltip) */}
+      {/* Botón Configuración (Sheet + Tooltip) - Directly below Header */}
+      <div className="mt-4 mb-6"> {/* Spacing for the button */}
         <TooltipProvider>
           <Sheet>
             <Tooltip>
               <TooltipTrigger asChild>
                 <SheetTrigger asChild>
-                  <Button variant="outline" size="icon" className="shrink-0"> {/* shrink-0 evita que se encoja */}
+                  <Button variant="outline" size="icon" className="shrink-0">
                     <Settings className="size-4" />
                   </Button>
                 </SheetTrigger>
@@ -110,75 +109,81 @@ export default function Home() {
             </SheetContent>
           </Sheet>
         </TooltipProvider>
+      </div>
 
-        {/* Input de Filtro (controlado por este componente) */}
-        <Input
-          placeholder="Filter emails..."
-          value={(table.getColumn("email")?.getFilterValue() as string) ?? ""}
-          onChange={(event) =>
-            table.getColumn("email")?.setFilterValue(event.target.value)
-          }
-          className="ml-4 max-w-sm" // Margen izquierdo y ancho
-        />
+      {/* Container for Table Area (Centered & Max Width) */}
+      <div className="max-w-6xl mx-auto"> {/* Adjust max-w- as needed */}
+        {/* --- Fila de Controles Superiores (Input y Columns) --- */}
+        <div className="flex items-center justify-between py-4 space-x-4">
+          {/* Input de Filtro - Aligned Left within this container */}
+          <Input
+            placeholder="Filter emails..."
+            value={(table.getColumn("email")?.getFilterValue() as string) ?? ""}
+            onChange={(event) =>
+              table.getColumn("email")?.setFilterValue(event.target.value)
+            }
+            className="max-w-sm" /* Removed flex-grow */
+          />
 
-        {/* Botón Columnas (controlado por este componente) */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="ml-auto shrink-0"> {/* ml-auto lo empuja a la derecha */}
-              Columns <ChevronDown className="ml-2 size-4" />
+          {/* Botón Columnas - Aligned Right within this container */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="shrink-0">
+                Columns <ChevronDown className="ml-2 size-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              {table
+                .getAllColumns()
+                .filter((column) => column.getCanHide())
+                .map((column) => {
+                  return (
+                    <DropdownMenuCheckboxItem
+                      key={column.id}
+                      className="capitalize"
+                      checked={column.getIsVisible()}
+                      onCheckedChange={(value) => column.toggleVisibility(!!value)}
+                    >
+                      {column.id}
+                    </DropdownMenuCheckboxItem>
+                  );
+                })}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+        {/* --- Fin Fila de Controles --- */}
+
+        {/* Componente Core de la Tabla */}
+        <DataTableCore table={table} columnsLength={tableColumns.length} />
+
+        {/* --- Fila de Paginación e Información --- */}
+        <div className="flex items-center justify-end space-x-2 py-4">
+          <div className="flex-1 text-sm text-muted-foreground">
+            {table.getFilteredSelectedRowModel().rows.length} of{" "}
+            {table.getFilteredRowModel().rows.length} row(s) selected.
+          </div>
+          <div className="space-x-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => table.previousPage()}
+              disabled={!table.getCanPreviousPage()}
+            >
+              Previous
             </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            {table
-              .getAllColumns()
-              .filter((column) => column.getCanHide()) // Ocultar Select y Actions
-              .map((column) => {
-                return (
-                  <DropdownMenuCheckboxItem
-                    key={column.id}
-                    className="capitalize"
-                    checked={column.getIsVisible()}
-                    onCheckedChange={(value) => column.toggleVisibility(!!value)}
-                  >
-                    {column.id}
-                  </DropdownMenuCheckboxItem>
-                );
-              })}
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
-      {/* --- Fin Fila de Controles --- */}
-
-      {/* Componente Core de la Tabla */}
-      <DataTableCore table={table} columnsLength={tableColumns.length} />
-
-      {/* --- Fila de Paginación e Información --- */}
-      <div className="flex items-center justify-end space-x-2 py-4">
-        <div className="flex-1 text-sm text-muted-foreground">
-          {table.getFilteredSelectedRowModel().rows.length} of{" "}
-          {table.getFilteredRowModel().rows.length} row(s) selected.
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => table.nextPage()}
+              disabled={!table.getCanNextPage()}
+            >
+              Next
+            </Button>
+          </div>
         </div>
-        <div className="space-x-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => table.previousPage()}
-            disabled={!table.getCanPreviousPage()}
-          >
-            Previous
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => table.nextPage()}
-            disabled={!table.getCanNextPage()}
-          >
-            Next
-          </Button>
-        </div>
+        {/* --- Fin Fila de Paginación --- */}
       </div>
-      {/* --- Fin Fila de Paginación --- */}
-
+      {/* End Container for Table Area */}
     </main>
   );
 }
