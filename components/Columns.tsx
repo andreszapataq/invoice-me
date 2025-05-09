@@ -40,7 +40,7 @@ export const columns: ColumnDef<Invoice>[] = [
   },
   {
     accessorKey: "status",
-    header: "Status",
+    header: "Estado",
     cell: ({ row }) => (
       <div className="capitalize">{row.getValue("status")}</div>
     ),
@@ -68,7 +68,7 @@ export const columns: ColumnDef<Invoice>[] = [
   },
   {
     accessorKey: "amount",
-    header: () => <div className="text-right">Amount</div>,
+    header: () => <div className="text-right">Total</div>,
     cell: ({ row }) => {
       const amount = parseFloat(row.getValue("amount"));
       return <div className="text-right font-medium">{formatCurrency(amount)}</div>;
@@ -88,11 +88,11 @@ export const columns: ColumnDef<Invoice>[] = [
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+            <DropdownMenuLabel>Acciones</DropdownMenuLabel>
             <DropdownMenuItem
               onClick={() => navigator.clipboard.writeText(invoice.id)}
             >
-              Copy invoice ID
+              Copiar valor
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

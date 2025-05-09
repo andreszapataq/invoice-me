@@ -119,7 +119,7 @@ export default function Home() {
             {/* Controles de la tabla */}
             <div className="flex items-center justify-between space-x-4 mb-4">
               <Input
-                placeholder="Filter emails..."
+                placeholder="Filtrar facturas..."
                 value={(table.getColumn("email")?.getFilterValue() as string) ?? ""}
                 onChange={(event) =>
                   table.getColumn("email")?.setFilterValue(event.target.value)
@@ -130,7 +130,7 @@ export default function Home() {
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" className="shrink-0">
-                    Columns <ChevronDown className="ml-2 size-4" />
+                    Columnas <ChevronDown className="ml-2 size-4" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
@@ -159,8 +159,8 @@ export default function Home() {
             {/* Fila de Paginación e Información */}
             <div className="flex items-center justify-end space-x-2 py-4">
               <div className="flex-1 text-sm text-muted-foreground">
-                {table.getFilteredSelectedRowModel().rows.length} of{" "}
-                {table.getFilteredRowModel().rows.length} row(s) selected.
+                {table.getFilteredSelectedRowModel().rows.length} de{" "}
+                {table.getFilteredRowModel().rows.length} fila(s) seleccionadas.
               </div>
               <div className="space-x-2">
                 <Button
@@ -169,7 +169,7 @@ export default function Home() {
                   onClick={() => table.previousPage()}
                   disabled={!table.getCanPreviousPage()}
                 >
-                  Previous
+                  Anterior
                 </Button>
                 <Button
                   variant="outline"
@@ -177,7 +177,7 @@ export default function Home() {
                   onClick={() => table.nextPage()}
                   disabled={!table.getCanNextPage()}
                 >
-                  Next
+                  Siguiente
                 </Button>
               </div>
             </div>
