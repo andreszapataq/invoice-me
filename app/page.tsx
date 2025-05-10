@@ -138,6 +138,14 @@ export default function Home() {
                     .getAllColumns()
                     .filter((column) => column.getCanHide())
                     .map((column) => {
+                      // Mapeo de IDs a nombres en español
+                      const columnNames: Record<string, string> = {
+                        status: "Estado",
+                        email: "Email",
+                        amount: "Total",
+                        // Añade aquí cualquier otra columna que necesites traducir
+                      };
+                      
                       return (
                         <DropdownMenuCheckboxItem
                           key={column.id}
@@ -145,7 +153,7 @@ export default function Home() {
                           checked={column.getIsVisible()}
                           onCheckedChange={(value) => column.toggleVisibility(!!value)}
                         >
-                          {column.id}
+                          {columnNames[column.id] || column.id}
                         </DropdownMenuCheckboxItem>
                       );
                     })}
