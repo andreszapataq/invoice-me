@@ -49,6 +49,7 @@ import {
 import { sampleInvoices } from "@/lib/data"; // Ajusta ruta
 import { columns } from "@/components/Columns"; // Ajusta ruta
 import { DataTableCore } from "@/components/DataTableCore"; // Ajusta ruta
+import { InvoiceForm } from "@/components/InvoiceForm"; // Importar el componente de formulario
 
 export default function Home() {
   const data = React.useMemo(() => sampleInvoices, []); // Datos
@@ -105,9 +106,11 @@ export default function Home() {
               <SheetContent side="left" className="p-6">
                 <SheetHeader>
                   <SheetTitle>Menú</SheetTitle>
-                  <SheetDescription>Opciones o filtros.</SheetDescription>
+                  <SheetDescription>Configura tus facturas automáticas</SheetDescription>
                 </SheetHeader>
-                <div className="p-4">Contenido del menú...</div>
+                <div className="p-4">
+                  <InvoiceForm />
+                </div>
               </SheetContent>
             </Sheet>
           </TooltipProvider>
@@ -143,6 +146,8 @@ export default function Home() {
                         status: "Estado",
                         email: "Email",
                         amount: "Total",
+                        concept: "Concepto",
+                        frequency: "Frecuencia"
                         // Añade aquí cualquier otra columna que necesites traducir
                       };
                       

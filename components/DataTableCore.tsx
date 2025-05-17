@@ -61,7 +61,7 @@ export function DataTableCore<TData>({
                 colSpan={columnsLength}
                 className="h-24 text-center"
               >
-                No results.
+                Sin resultados.
               </TableCell>
             </TableRow>
           )}

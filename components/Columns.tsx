@@ -67,6 +67,20 @@ export const columns: ColumnDef<Invoice>[] = [
     cell: ({ row }) => <div className="lowercase">{row.getValue("email")}</div>,
   },
   {
+    accessorKey: "concept",
+    header: "Concepto",
+    cell: ({ row }) => <div>{row.getValue("concept")}</div>,
+  },
+  {
+    accessorKey: "frequency",
+    header: "Frecuencia",
+    cell: ({ row }) => {
+      const frequency = row.getValue("frequency") as string;
+      const displayText = frequency === "monthly" ? "Mensual" : "Quincenal";
+      return <div>{displayText}</div>;
+    },
+  },
+  {
     accessorKey: "amount",
     header: () => <div className="text-right">Total</div>,
     cell: ({ row }) => {
