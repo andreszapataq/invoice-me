@@ -16,6 +16,10 @@ interface InvoiceFormData {
   concept: string;
 }
 
+interface InvoiceFormProps {
+  onCancel?: () => void;
+}
+
 const DEFAULT_FORM_DATA: InvoiceFormData = {
   email: '',
   amount: '',
@@ -23,7 +27,7 @@ const DEFAULT_FORM_DATA: InvoiceFormData = {
   concept: ''
 };
 
-export function InvoiceForm() {
+export function InvoiceForm({ onCancel }: InvoiceFormProps) {
   const [formData, setFormData] = useState<InvoiceFormData>(DEFAULT_FORM_DATA);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -51,6 +55,9 @@ export function InvoiceForm() {
 
   const handleCancel = () => {
     setFormData(DEFAULT_FORM_DATA);
+    if (onCancel) {
+      onCancel();
+    }
   };
 
   return (

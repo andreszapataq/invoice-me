@@ -81,6 +81,8 @@ export default function Home() {
     },
   });
 
+  const [isSheetOpen, setIsSheetOpen] = React.useState(false);
+
   return (
     <main className="min-h-screen p-8 md:py-[90px] md:px-[190px]">
       <Header />
@@ -89,8 +91,8 @@ export default function Home() {
       <div className="grid grid-cols-[48px_1fr] gap-6 mt-15">
         {/* Columna 1: Botón de Configuración */}
         <div className="flex items-start">
-          <TooltipProvider>
-            <Sheet>
+          <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
+            <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
                   <SheetTrigger asChild>
@@ -103,17 +105,17 @@ export default function Home() {
                   <p>Configuración</p>
                 </TooltipContent>
               </Tooltip>
-              <SheetContent side="left" className="p-6">
-                <SheetHeader>
-                  <SheetTitle>Menú</SheetTitle>
-                  <SheetDescription>Configura tus facturas automáticas</SheetDescription>
-                </SheetHeader>
-                <div className="p-4">
-                  <InvoiceForm />
-                </div>
-              </SheetContent>
-            </Sheet>
-          </TooltipProvider>
+            </TooltipProvider>
+            <SheetContent side="left" className="p-6">
+              <SheetHeader>
+                <SheetTitle>Menú</SheetTitle>
+                <SheetDescription>Configura tus facturas automáticas</SheetDescription>
+              </SheetHeader>
+              <div className="p-4">
+                <InvoiceForm onCancel={() => setIsSheetOpen(false)} />
+              </div>
+            </SheetContent>
+          </Sheet>
         </div>
 
         {/* Columna 2: Tabla y sus controles */}
