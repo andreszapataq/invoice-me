@@ -18,8 +18,29 @@ export const sampleInvoices: Invoice[] = [
 
 // Helper de formato (opcional pero útil)
 export const formatCurrency = (amount: number) => {
-  return new Intl.NumberFormat("en-US", {
+  return new Intl.NumberFormat("es-CO", {
     style: "currency",
-    currency: "USD", 
+    currency: "COP",
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0
   }).format(amount);
+};
+
+// Para formatear la entrada de moneda COP
+export const formatCurrencyInput = (value: string): string => {
+  // Remover caracteres no numéricos
+  const numericValue = value.replace(/[^\d]/g, '');
+  
+  if (!numericValue) return '';
+  
+  // Convertir a número y formatear con separadores de miles
+  const number = parseInt(numericValue, 10);
+  return number.toLocaleString('es-CO');
+};
+
+// Para convertir el valor formateado de vuelta a número
+export const parseCurrencyValue = (formattedValue: string): number => {
+  // Remover separadores de miles y cualquier caracter no numérico
+  const numericString = formattedValue.replace(/\D/g, '');
+  return numericString ? parseInt(numericString, 10) : 0;
 };
