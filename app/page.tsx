@@ -82,6 +82,39 @@ export default function Home() {
   });
 
   const [isSheetOpen, setIsSheetOpen] = React.useState(false);
+  const [isTooltipOpen, setIsTooltipOpen] = React.useState(false);
+  
+  // Referencia para controlar el timeout del tooltip
+  const tooltipTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
+  
+  // Referencia al botón para detectar si el mouse está sobre él
+  const buttonRef = React.useRef<HTMLButtonElement>(null);
+  
+  // Función para cerrar el tooltip de forma definitiva
+  const forceCloseTooltip = React.useCallback(() => {
+    setIsTooltipOpen(false);
+    // Limpiar cualquier timeout pendiente
+    if (tooltipTimeoutRef.current) {
+      clearTimeout(tooltipTimeoutRef.current);
+      tooltipTimeoutRef.current = null;
+    }
+  }, []);
+  
+  // Cerrar el tooltip cuando cambia el estado del sheet
+  React.useEffect(() => {
+    forceCloseTooltip();
+    
+    // Añadimos un event listener global para cerrar el tooltip al hacer clic fuera
+    const handleGlobalClick = () => {
+      forceCloseTooltip();
+    };
+    
+    document.addEventListener('click', handleGlobalClick);
+    
+    return () => {
+      document.removeEventListener('click', handleGlobalClick);
+    };
+  }, [isSheetOpen, forceCloseTooltip]);
 
   return (
     <main className="min-h-screen p-8 md:py-[90px] md:px-[190px]">
@@ -90,22 +123,77 @@ export default function Home() {
       {/* Grid Container para Settings y Tabla */}
       <div className="grid grid-cols-[48px_1fr] gap-6 mt-15">
         {/* Columna 1: Botón de Configuración */}
-        <div className="flex items-start">
-          <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <SheetTrigger asChild>
-                    <Button variant="outline" size="icon" className="shrink-0">
-                      <Settings className="size-4" />
-                    </Button>
-                  </SheetTrigger>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Configuración</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+        <div className="flex items-start relative">
+          {/* Los componentes de Tooltip y Sheet están separados para evitar conflictos de estado */}
+          
+          {/* Primero el Tooltip con su propio provider */}
+          <TooltipProvider delayDuration={0}>
+            {/* El tooltip solo se mostrará si está abierto Y el sheet está cerrado */}
+            <Tooltip 
+              open={isTooltipOpen && !isSheetOpen} 
+              onOpenChange={(open) => {
+                // Evitar que se abra si el sheet está abierto
+                if (isSheetOpen) return;
+                setIsTooltipOpen(open);
+              }}
+            >
+              <TooltipTrigger asChild>
+                <div className="absolute top-0 left-0 z-20 pointer-events-none">
+                  {/* Este div fantasma actúa como trigger pero no interactúa con el mouse */}
+                  <div style={{ width: '40px', height: '40px' }}></div>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent sideOffset={5}>
+                <p>Configuración</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+          
+          {/* Luego el Sheet, completamente separado */}
+          <Sheet 
+            open={isSheetOpen} 
+            onOpenChange={(open) => {
+              setIsSheetOpen(open);
+              // Si se abre o cierra el sheet, forzar cierre del tooltip
+              forceCloseTooltip();
+            }}
+          >
+            <SheetTrigger asChild>
+              <Button 
+                ref={buttonRef}
+                variant="outline" 
+                size="icon" 
+                className="shrink-0 relative z-10"
+                onMouseEnter={() => {
+                  // Solo mostrar el tooltip si el sheet está cerrado
+                  if (!isSheetOpen) {
+                    // Usar un timeout para evitar parpadeos
+                    if (tooltipTimeoutRef.current) {
+                      clearTimeout(tooltipTimeoutRef.current);
+                    }
+                    tooltipTimeoutRef.current = setTimeout(() => {
+                      setIsTooltipOpen(true);
+                    }, 100);
+                  }
+                }}
+                onMouseLeave={() => {
+                  // Cancelar el timeout si existe
+                  if (tooltipTimeoutRef.current) {
+                    clearTimeout(tooltipTimeoutRef.current);
+                    tooltipTimeoutRef.current = null;
+                  }
+                  setIsTooltipOpen(false);
+                }}
+                onClick={(e) => {
+                  // Al hacer clic en el botón, asegurarnos de cerrar el tooltip
+                  forceCloseTooltip();
+                  // Evitar propagación del clic para que no active otros manejadores
+                  e.stopPropagation();
+                }}
+              >
+                <Settings className="size-4" />
+              </Button>
+            </SheetTrigger>
             <SheetContent side="left" className="p-6">
               <SheetHeader>
                 <SheetTitle>Menú</SheetTitle>
