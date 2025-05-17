@@ -173,7 +173,7 @@ export default function Home() {
                     }
                     tooltipTimeoutRef.current = setTimeout(() => {
                       setIsTooltipOpen(true);
-                    }, 100);
+                    }, 50);
                   }
                 }}
                 onMouseLeave={() => {
