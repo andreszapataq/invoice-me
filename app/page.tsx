@@ -212,10 +212,10 @@ export default function Home() {
             {/* Controles de la tabla */}
             <div className="flex items-center justify-between space-x-4 mb-4">
               <Input
-                placeholder="Filtrar facturas..."
-                value={(table.getColumn("email")?.getFilterValue() as string) ?? ""}
+                placeholder="Filtrar por fecha..."
+                value={(table.getColumn("date")?.getFilterValue() as string) ?? ""}
                 onChange={(event) =>
-                  table.getColumn("email")?.setFilterValue(event.target.value)
+                  table.getColumn("date")?.setFilterValue(event.target.value)
                 }
                 className="max-w-sm"
               />

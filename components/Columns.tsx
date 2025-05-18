@@ -39,21 +39,14 @@ export const columns: ColumnDef<Invoice>[] = [
     enableHiding: false,
   },
   {
-    accessorKey: "status",
-    header: "Estado",
-    cell: ({ row }) => (
-      <div className="capitalize">{row.getValue("status")}</div>
-    ),
-  },
-  {
-    accessorKey: "email",
+    accessorKey: "date",
     header: ({ column }) => {
       return (
         <div
           className="flex cursor-pointer items-center"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         >
-          Email
+          Fecha
           {column.getIsSorted() === "desc" ? (
             <ArrowUpDown className="ml-2 size-4 opacity-50" />
           ) : column.getIsSorted() === "asc" ? (
@@ -64,7 +57,12 @@ export const columns: ColumnDef<Invoice>[] = [
         </div>
       );
     },
-    cell: ({ row }) => <div className="lowercase">{row.getValue("email")}</div>,
+    cell: ({ row }) => {
+      const date = row.getValue("date") as string;
+      // Formatear la fecha a formato español (DD/MM/YYYY)
+      const formattedDate = new Date(date).toLocaleDateString('es-ES');
+      return <div>{formattedDate}</div>;
+    },
   },
   {
     accessorKey: "concept",
@@ -72,13 +70,9 @@ export const columns: ColumnDef<Invoice>[] = [
     cell: ({ row }) => <div>{row.getValue("concept")}</div>,
   },
   {
-    accessorKey: "frequency",
-    header: "Frecuencia",
-    cell: ({ row }) => {
-      const frequency = row.getValue("frequency") as string;
-      const displayText = frequency === "monthly" ? "Mensual" : "Quincenal";
-      return <div>{displayText}</div>;
-    },
+    accessorKey: "email",
+    header: "Email",
+    cell: ({ row }) => <div className="lowercase">{row.getValue("email")}</div>,
   },
   {
     accessorKey: "amount",
@@ -87,6 +81,13 @@ export const columns: ColumnDef<Invoice>[] = [
       const amount = parseFloat(row.getValue("amount"));
       return <div className="text-right font-medium">{formatCurrency(amount)}</div>;
     },
+  },
+  {
+    accessorKey: "status",
+    header: "Estado",
+    cell: ({ row }) => (
+      <div className="capitalize">{row.getValue("status")}</div>
+    ),
   },
   {
     id: "actions",
