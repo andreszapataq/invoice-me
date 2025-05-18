@@ -10,7 +10,9 @@ import {
   getPaginationRowModel,
   getSortedRowModel,
   useReactTable,
+  FilterFn,
 } from "@tanstack/react-table";
+import { rankItem } from "@tanstack/match-sorter-utils";
 import { ChevronDown, Settings } from "lucide-react";
 
 import { Header } from "@/components/Header";
@@ -46,10 +48,24 @@ import {
 } from "@/components/ui/tooltip";
 
 // Importaciones de datos y componentes de tabla
-import { sampleInvoices } from "@/lib/data"; // Ajusta ruta
+import { sampleInvoices, type Invoice } from "@/lib/data"; // Ajusta ruta
 import { columns } from "@/components/Columns"; // Ajusta ruta
 import { DataTableCore } from "@/components/DataTableCore"; // Ajusta ruta
 import { InvoiceForm } from "@/components/InvoiceForm"; // Importar el componente de formulario
+
+// Definimos una función de filtro personalizada que busca en múltiples campos
+const fuzzyFilter: FilterFn<Invoice> = (row, columnId, value, addMeta) => {
+  // Valor a buscar
+  const itemRank = rankItem(row.getValue(columnId), value);
+  
+  // Guardar el ranking para poder ordenar por relevancia
+  addMeta({
+    itemRank,
+  });
+  
+  // Devuelve true si el texto coincide con el valor
+  return itemRank.passed;
+};
 
 export default function Home() {
   const data = React.useMemo(() => sampleInvoices, []); // Datos
@@ -60,27 +76,41 @@ export default function Home() {
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = React.useState({});
+  
+  // Estado para el filtro de texto
+  const [globalFilter, setGlobalFilter] = React.useState('');
 
   // Instancia de la tabla (manejada aquí)
   const table = useReactTable({
     data,
     columns: tableColumns,
-    onSortingChange: setSorting,
-    onColumnFiltersChange: setColumnFilters,
+    filterFns: {
+      fuzzy: fuzzyFilter,
+    },
+    defaultColumn: {
+      // @ts-expect-error - El tipo FilterFnOption necesita ser ignorado aquí
+      filterFn: 'fuzzy',
+    },
     getCoreRowModel: getCoreRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
+    onSortingChange: setSorting,
+    onColumnFiltersChange: setColumnFilters,
     onColumnVisibilityChange: setColumnVisibility,
     onRowSelectionChange: setRowSelection,
+    onGlobalFilterChange: setGlobalFilter,
+    // @ts-expect-error - El tipo FilterFnOption necesita ser ignorado aquí
+    globalFilterFn: 'fuzzy',
     state: {
       sorting,
       columnFilters,
       columnVisibility,
       rowSelection,
+      globalFilter,
     },
   });
-
+  
   const [isSheetOpen, setIsSheetOpen] = React.useState(false);
   const [isTooltipOpen, setIsTooltipOpen] = React.useState(false);
   
@@ -212,11 +242,9 @@ export default function Home() {
             {/* Controles de la tabla */}
             <div className="flex items-center justify-between space-x-4 mb-4">
               <Input
-                placeholder="Filtrar por fecha..."
-                value={(table.getColumn("date")?.getFilterValue() as string) ?? ""}
-                onChange={(event) =>
-                  table.getColumn("date")?.setFilterValue(event.target.value)
-                }
+                placeholder="Filtrar por Concepto, Email o Estado..."
+                value={globalFilter ?? ''}
+                onChange={(event) => setGlobalFilter(event.target.value)}
                 className="max-w-sm"
               />
 

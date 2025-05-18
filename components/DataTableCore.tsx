@@ -46,6 +46,7 @@ export function DataTableCore<TData>({
             table.getRowModel().rows.map((row) => (
               <TableRow
                 key={row.id}
+                data-row-id={row.id}
                 data-state={row.getIsSelected() && "selected"}
               >
                 {row.getVisibleCells().map((cell) => (
@@ -56,7 +57,7 @@ export function DataTableCore<TData>({
               </TableRow>
             ))
           ) : (
-            <TableRow>
+            <TableRow className="no-results">
               <TableCell
                 colSpan={columnsLength}
                 className="h-24 text-center"

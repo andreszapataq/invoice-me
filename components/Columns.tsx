@@ -68,11 +68,21 @@ export const columns: ColumnDef<Invoice>[] = [
     accessorKey: "concept",
     header: "Concepto",
     cell: ({ row }) => <div>{row.getValue("concept")}</div>,
+    filterFn: (row, id, value) => {
+      return String(row.getValue(id))
+        .toLowerCase()
+        .includes(String(value).toLowerCase());
+    },
   },
   {
     accessorKey: "email",
     header: "Email",
     cell: ({ row }) => <div className="lowercase">{row.getValue("email")}</div>,
+    filterFn: (row, id, value) => {
+      return String(row.getValue(id))
+        .toLowerCase()
+        .includes(String(value).toLowerCase());
+    },
   },
   {
     accessorKey: "amount",
@@ -88,6 +98,11 @@ export const columns: ColumnDef<Invoice>[] = [
     cell: ({ row }) => (
       <div className="capitalize">{row.getValue("status")}</div>
     ),
+    filterFn: (row, id, value) => {
+      return String(row.getValue(id))
+        .toLowerCase()
+        .includes(String(value).toLowerCase());
+    },
   },
   {
     id: "actions",
