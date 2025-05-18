@@ -49,7 +49,7 @@ import {
 
 // Importaciones de datos y componentes de tabla
 import { sampleInvoices, type Invoice } from "@/lib/data"; // Ajusta ruta
-import { columns } from "@/components/Columns"; // Ajusta ruta
+import { createColumns } from "@/components/Columns"; // Importamos la función createColumns en lugar de columns
 import { DataTableCore } from "@/components/DataTableCore"; // Ajusta ruta
 import { InvoiceForm } from "@/components/InvoiceForm"; // Importar el componente de formulario
 
@@ -68,8 +68,29 @@ const fuzzyFilter: FilterFn<Invoice> = (row, columnId, value, addMeta) => {
 };
 
 export default function Home() {
-  const data = React.useMemo(() => sampleInvoices, []); // Datos
-  const tableColumns = React.useMemo(() => columns, []); // Columnas
+  // Estado para almacenar las facturas
+  const [invoices, setInvoices] = React.useState<Invoice[]>(() => sampleInvoices);
+  const data = React.useMemo(() => invoices, [invoices]); // Usar el estado como fuente de datos
+  
+  // Función para cambiar el estado de una factura
+  const toggleInvoiceStatus = React.useCallback((invoiceId: string) => {
+    setInvoices(prevInvoices => 
+      prevInvoices.map(invoice => {
+        if (invoice.id === invoiceId) {
+          // Alternar entre "Pagado" y "Sin Pago" (eliminar "En Proceso")
+          const newStatus = invoice.status === "Pagado" ? "Sin Pago" : "Pagado";
+          return { ...invoice, status: newStatus };
+        }
+        return invoice;
+      })
+    );
+  }, []);
+  
+  // Crear las columnas con la función de cambio de estado
+  const tableColumns = React.useMemo(
+    () => createColumns(toggleInvoiceStatus), 
+    [toggleInvoiceStatus]
+  );
 
   // Estados para la tabla (manejados aquí)
   const [sorting, setSorting] = React.useState<SortingState>([]);
@@ -261,10 +282,11 @@ export default function Home() {
                     .map((column) => {
                       // Mapeo de IDs a nombres en español
                       const columnNames: Record<string, string> = {
-                        status: "Estado",
+                        date: "Fecha",
+                        concept: "Concepto",
                         email: "Email",
                         amount: "Total",
-                        concept: "Concepto",
+                        status: "Estado",
                         frequency: "Frecuencia"
                         // Añade aquí cualquier otra columna que necesites traducir
                       };

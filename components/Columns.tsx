@@ -1,7 +1,7 @@
 "use client";
 
 import { ColumnDef } from "@tanstack/react-table";
-import { ArrowUpDown, MoreHorizontal } from "lucide-react";
+import { ArrowUpDown, MoreHorizontal, Check, XCircle } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -15,7 +15,10 @@ import {
 
 import { Invoice, formatCurrency } from "@/lib/data";
 
-export const columns: ColumnDef<Invoice>[] = [
+// Función para crear las columnas, ahora recibe una función para actualizar el estado
+export const createColumns = (
+  toggleStatus: (invoiceId: string) => void
+): ColumnDef<Invoice>[] => [
   {
     id: "select",
     header: ({ table }) => (
@@ -95,9 +98,19 @@ export const columns: ColumnDef<Invoice>[] = [
   {
     accessorKey: "status",
     header: "Estado",
-    cell: ({ row }) => (
-      <div className="capitalize">{row.getValue("status")}</div>
-    ),
+    cell: ({ row }) => {
+      const status = row.getValue("status") as string;
+      return (
+        <div className={`capitalize flex items-center ${
+          status === "Pagado" ? "text-green-600" : 
+          status === "Sin Pago" ? "text-red-600" : "text-yellow-600"
+        }`}>
+          {status === "Pagado" && <Check className="mr-1 size-4" />}
+          {status === "Sin Pago" && <XCircle className="mr-1 size-4" />}
+          {status}
+        </div>
+      );
+    },
     filterFn: (row, id, value) => {
       return String(row.getValue(id))
         .toLowerCase()
@@ -109,6 +122,8 @@ export const columns: ColumnDef<Invoice>[] = [
     enableHiding: false,
     cell: ({ row }) => {
       const invoice = row.original;
+      const isPaid = invoice.status === "Pagado";
+      
       return (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -120,9 +135,10 @@ export const columns: ColumnDef<Invoice>[] = [
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Acciones</DropdownMenuLabel>
             <DropdownMenuItem
-              onClick={() => navigator.clipboard.writeText(invoice.id)}
+              onClick={() => toggleStatus(invoice.id)}
+              className={isPaid ? "text-red-600" : "text-green-600"}
             >
-              Copiar valor
+              {isPaid ? "Marcar como Sin Pago" : "Marcar como Pagado"}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -130,3 +146,6 @@ export const columns: ColumnDef<Invoice>[] = [
     },
   },
 ];
+
+// Exportamos la versión original para compatibilidad con código existente
+export const columns = createColumns(() => {});
