@@ -9,6 +9,8 @@ import {
   SelectValue,
 } from './ui/select';
 import { formatCurrencyInput } from '@/lib/data';
+import { InvoicePreview } from './InvoicePreview';
+import { Invoice } from '@/lib/data';
 
 interface InvoiceFormData {
   email: string;
@@ -33,6 +35,7 @@ const DEFAULT_FORM_DATA: InvoiceFormData = {
 export function InvoiceForm({ onCancel }: InvoiceFormProps) {
   const [formData, setFormData] = useState<InvoiceFormData>(DEFAULT_FORM_DATA);
   const [formattedAmount, setFormattedAmount] = useState<string>('');
+  const [previewInvoice, setPreviewInvoice] = useState<Invoice | null>(null);
 
   // Cuando formData.amount cambia, actualizar el valor formateado
   useEffect(() => {
@@ -132,9 +135,6 @@ export function InvoiceForm({ onCancel }: InvoiceFormProps) {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // El valor numérico ya está almacenado en formData.amount
-    // No necesitamos reconvertirlo
-    
     // Crear el objeto final para enviar
     const finalData = {
       ...formData,
@@ -142,12 +142,20 @@ export function InvoiceForm({ onCancel }: InvoiceFormProps) {
     };
     
     console.log('Datos de factura:', finalData);
-    // Aquí iría la lógica para guardar los datos
-    alert('Factura configurada con éxito!');
     
-    // Reiniciar formulario
-    setFormData(DEFAULT_FORM_DATA);
-    setFormattedAmount('');
+    // Crear una factura temporal para la vista previa
+    const previewData: Invoice = {
+      id: `inv-${Date.now().toString().slice(-6)}`,
+      status: "En Proceso",
+      email: formData.email,
+      amount: parseInt(formData.amount),
+      frequency: formData.frequency,
+      concept: formData.concept,
+      date: new Date().toISOString().slice(0, 10)
+    };
+    
+    // Establecer la factura de vista previa
+    setPreviewInvoice(previewData);
   };
 
   const handleCancel = () => {
@@ -159,115 +167,137 @@ export function InvoiceForm({ onCancel }: InvoiceFormProps) {
 
   return (
     <div className="w-full">
-      <h3 className="font-medium mb-2">Crear Nueva Factura Automática</h3>
-      
-      <form onSubmit={handleSubmit} className="space-y-4 py-4">
-        <div className="space-y-2">
-          <label htmlFor="email" className="text-sm font-medium">
-            Correo Electrónico
-          </label>
-          <Input
-            id="email"
-            name="email"
-            type="email"
-            placeholder="correo@ejemplo.com"
-            value={formData.email}
-            onChange={handleChange}
-            required
+      {!previewInvoice ? (
+        <>
+          <h3 className="font-medium mb-2">Crear Nueva Factura Automática</h3>
+          
+          <form onSubmit={handleSubmit} className="space-y-4 py-4">
+            <div className="space-y-2">
+              <label htmlFor="email" className="text-sm font-medium">
+                Correo Electrónico
+              </label>
+              <Input
+                id="email"
+                name="email"
+                type="email"
+                placeholder="correo@ejemplo.com"
+                value={formData.email}
+                onChange={handleChange}
+                required
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <label htmlFor="amount" className="text-sm font-medium">
+                Valor de la Factura (COP)
+              </label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">
+                  $
+                </span>
+                <Input
+                  id="amount"
+                  name="amount"
+                  type="text"
+                  inputMode="numeric"
+                  placeholder="0"
+                  className="pl-6"
+                  value={formattedAmount}
+                  onChange={handleAmountChange}
+                  required
+                />
+              </div>
+              <p className="text-xs text-gray-500 mt-1">Valor en pesos colombianos sin centavos</p>
+            </div>
+            
+            <div className="space-y-2">
+              <label htmlFor="frequency" className="text-sm font-medium">
+                Frecuencia
+              </label>
+              <Select
+                value={formData.frequency}
+                onValueChange={handleFrequencyChange}
+                name="frequency"
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Selecciona la frecuencia" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="monthly">Mensual</SelectItem>
+                  <SelectItem value="biweekly">Quincenal</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="space-y-2">
+              <label htmlFor="dueDateDay" className="text-sm font-medium">
+                Día de corte
+              </label>
+              <Select
+                value={formData.dueDateDay}
+                onValueChange={(value) => 
+                  setFormData(prev => ({ ...prev, dueDateDay: value }))
+                }
+                name="dueDateDay"
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Selecciona el día de corte" />
+                </SelectTrigger>
+                <SelectContent>
+                  {generateDayOptions()}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-gray-500 mt-1">
+                {formData.frequency === 'monthly' 
+                  ? 'Día del mes en que se generará la factura' 
+                  : 'Día de la quincena en que se generará la factura'}
+              </p>
+            </div>
+            
+            <div className="space-y-2">
+              <label htmlFor="concept" className="text-sm font-medium">
+                Concepto
+              </label>
+              <Input
+                id="concept"
+                name="concept"
+                type="text"
+                placeholder="Ahorro personal"
+                value={formData.concept}
+                onChange={handleChange}
+                required
+              />
+            </div>
+            
+            <div className="flex gap-2 justify-end pt-2">
+              <Button type="button" variant="outline" onClick={handleCancel}>
+                Cancelar
+              </Button>
+              <Button type="submit">
+                Vista Previa
+              </Button>
+            </div>
+          </form>
+        </>
+      ) : (
+        <div className="w-full">
+          <InvoicePreview 
+            invoice={previewInvoice} 
+            customerInfo={{
+              name: "Hernan Andres",
+              fullName: "Hernan Andres Zapata Quiñonez",
+              address: "KR 97 # 6 25 Casa blanca",
+              id: "94541677"
+            }}
           />
-        </div>
-        
-        <div className="space-y-2">
-          <label htmlFor="amount" className="text-sm font-medium">
-            Valor de la Factura (COP)
-          </label>
-          <div className="relative">
-            <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">
-              $
-            </span>
-            <Input
-              id="amount"
-              name="amount"
-              type="text"
-              inputMode="numeric"
-              placeholder="0"
-              className="pl-6"
-              value={formattedAmount}
-              onChange={handleAmountChange}
-              required
-            />
+          
+          <div className="flex gap-2 justify-end mt-4">
+            <Button type="button" variant="outline" onClick={() => setPreviewInvoice(null)}>
+              Volver al formulario
+            </Button>
           </div>
-          <p className="text-xs text-gray-500 mt-1">Valor en pesos colombianos sin centavos</p>
         </div>
-        
-        <div className="space-y-2">
-          <label htmlFor="frequency" className="text-sm font-medium">
-            Frecuencia
-          </label>
-          <Select
-            value={formData.frequency}
-            onValueChange={handleFrequencyChange}
-            name="frequency"
-          >
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Selecciona la frecuencia" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="monthly">Mensual</SelectItem>
-              <SelectItem value="biweekly">Quincenal</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        
-        <div className="space-y-2">
-          <label htmlFor="dueDateDay" className="text-sm font-medium">
-            Día de corte
-          </label>
-          <Select
-            value={formData.dueDateDay}
-            onValueChange={(value) => 
-              setFormData(prev => ({ ...prev, dueDateDay: value }))
-            }
-            name="dueDateDay"
-          >
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Selecciona el día de corte" />
-            </SelectTrigger>
-            <SelectContent>
-              {generateDayOptions()}
-            </SelectContent>
-          </Select>
-          <p className="text-xs text-gray-500 mt-1">
-            {formData.frequency === 'monthly' 
-              ? 'Día del mes en que se generará la factura' 
-              : 'Día de la quincena en que se generará la factura'}
-          </p>
-        </div>
-        
-        <div className="space-y-2">
-          <label htmlFor="concept" className="text-sm font-medium">
-            Concepto
-          </label>
-          <Input
-            id="concept"
-            name="concept"
-            type="text"
-            placeholder="Ahorro personal"
-            value={formData.concept}
-            onChange={handleChange}
-            required
-          />
-        </div>
-        
-        <div className="flex gap-2 justify-end pt-2">
-          <Button type="button" variant="outline" onClick={handleCancel}>
-            Cancelar
-          </Button>
-          <Button type="submit">
-            Guardar
-          </Button>
-        </div>
-      </form>
+      )}
     </div>
   );
 } 
