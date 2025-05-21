@@ -20,21 +20,20 @@ export async function generateInvoicePDF(invoice: Invoice, customerInfo: Custome
   const primaryColor = '#FF6633'; // Color naranja para Invoice Me
   const textColor = '#333333';
   
-  // Título - Invoice Me
-  doc.setFontSize(32);
+  // Título - Invoice Me con líneas más juntas y más bold
+  doc.setFontSize(36); // Aumenté el tamaño para hacerlo más bold
   doc.setTextColor(primaryColor);
   doc.text('Invoice', 15, 25);
-  doc.text('Me', 15, 40);
+  doc.text('Me', 15, 37); // Reduje el espacio entre las líneas
   
-  // Número de factura y fecha
+  // Solo fecha (eliminamos el consecutivo)
   doc.setFontSize(12);
   doc.setTextColor(textColor);
-  doc.text(`No. ${invoice.id.substring(4, 8).padStart(4, '0')}`, pageWidth - 15, 25, { align: 'right' });
   
   // Formatear la fecha
   const date = new Date(invoice.date);
   const formattedDate = `${date.getDate()} ${getMonthName(date).toLowerCase()} ${date.getFullYear()}`;
-  doc.text(formattedDate, pageWidth - 15, 35, { align: 'right' });
+  doc.text(formattedDate, pageWidth - 15, 25, { align: 'right' }); // Ajusté la posición Y
   
   // Datos del cliente
   doc.setFontSize(12);
@@ -43,23 +42,9 @@ export async function generateInvoicePDF(invoice: Invoice, customerInfo: Custome
   doc.text(customerInfo.fullName || 'Cliente', 15, 70);
   doc.text(`C.C. ${customerInfo.id || ''}`, 15, 77);
   
-  // Si hay dirección, la agregamos
-  if (customerInfo.address) {
-    const addressParts = customerInfo.address.split(' ');
-    // Primera línea: CR 97 6 25
-    // Segunda línea: resto de la dirección
-    if (addressParts.length >= 4) {
-      doc.text(`${addressParts.slice(0, 4).join(' ')}`, 15, 84);
-      if (addressParts.length > 4) {
-        doc.text(`${addressParts.slice(4).join(' ')}`, 15, 91);
-      }
-    } else {
-      doc.text(customerInfo.address, 15, 84);
-    }
-  }
-  
-  const city = "Cali, Colombia";
-  doc.text(city, 15, 98);
+  // Dirección en un formato específico
+  doc.text("CR 97 #6 - 25", 15, 84);
+  doc.text("Cali - Colombia", 15, 91); // Con guion
   
   // Tabla de items
   const tableY = 110;
@@ -76,7 +61,7 @@ export async function generateInvoicePDF(invoice: Invoice, customerInfo: Custome
   let currentX = tableStartX;
   
   // Encabezados
-  doc.text('Item', currentX + 5, tableY + 6);
+  doc.text('Concepto', currentX + 5, tableY + 6); // Cambié "Item" por "Concepto"
   currentX += (pageWidth - 30) * colWidths[0];
   
   doc.text('Valor', currentX, tableY + 6);
@@ -90,8 +75,8 @@ export async function generateInvoicePDF(invoice: Invoice, customerInfo: Custome
   // Contenido de la tabla
   const contentY = tableY + 20;
   
-  // ID y concepto del item
-  doc.text(`${invoice.id.substring(4, 8).padStart(4, '0')} ${invoice.concept || 'Saving Plan for You'}`, tableStartX + 5, contentY);
+  // Solo concepto definido por el usuario sin consecutivo
+  doc.text(`${invoice.concept || 'Concepto'}`, tableStartX + 5, contentY);
   
   // Valor unitario
   const formattedAmount = formatCurrency(invoice.amount);
@@ -129,16 +114,6 @@ export async function generateInvoicePDF(invoice: Invoice, customerInfo: Custome
   doc.setFontSize(14);
   doc.setTextColor(textColor);
   doc.text(formattedAmount, pageWidth - 15, bankInfoY + 15, { align: 'right' });
-  
-  // Botón de paga aquí
-  doc.setFontSize(14);
-  doc.setTextColor(primaryColor);
-  doc.text('Paga aquí', 15, bankInfoY + 45);
-  
-  // Dibujar un cursor de mano junto al texto
-  const cursorY = bankInfoY + 45 - 3;
-  doc.setTextColor(textColor);
-  doc.text('↘', 80, cursorY);
   
   // Pie de página
   doc.setFontSize(10);
