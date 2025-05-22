@@ -1,7 +1,7 @@
 "use client";
 
 import { ColumnDef } from "@tanstack/react-table";
-import { ArrowUpDown, MoreHorizontal, Check, XCircle } from "lucide-react";
+import { ArrowUpDown, MoreHorizontal } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -12,6 +12,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Badge } from "@/components/ui/badge";
 
 import { Invoice, formatCurrency } from "@/lib/data";
 
@@ -101,14 +102,11 @@ export const createColumns = (
     cell: ({ row }) => {
       const status = row.getValue("status") as string;
       return (
-        <div className={`capitalize flex items-center ${
-          status === "Pagado" ? "text-green-600" : 
-          status === "Sin Pago" ? "text-red-600" : "text-yellow-600"
-        }`}>
-          {status === "Pagado" && <Check className="mr-1 size-4" />}
-          {status === "Sin Pago" && <XCircle className="mr-1 size-4" />}
+        <Badge 
+          variant={status === "Pagado" ? "default" : "secondary"}
+        >
           {status}
-        </div>
+        </Badge>
       );
     },
     filterFn: (row, id, value) => {
