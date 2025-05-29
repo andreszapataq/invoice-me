@@ -40,11 +40,11 @@ export async function generateInvoicePDF(invoice: Invoice, customerInfo: Custome
   doc.text('Datos del Cliente', 15, 60);
   doc.setFontSize(10);
   doc.text(customerInfo.fullName || 'Cliente', 15, 70);
-  doc.text(`C.C. ${customerInfo.id || ''}`, 15, 77);
+  doc.text(`C.C. ${customerInfo.id || ''}`, 15, 75);
   
   // Dirección en un formato específico
-  doc.text("CR 97 #6 - 25", 15, 84);
-  doc.text("Cali - Colombia", 15, 91); // Con guion
+  doc.text("CR 97 #6 - 25", 15, 80);
+  doc.text("Cali - Colombia", 15, 85); // Con guion
   
   // Tabla de items
   const tableY = 110;
@@ -104,8 +104,8 @@ export async function generateInvoicePDF(invoice: Invoice, customerInfo: Custome
   
   doc.setFontSize(10);
   doc.text('Nequi Colombia', 15, bankInfoY + 10);
-  doc.text('No. 3113559747', 15, bankInfoY + 17);
-  doc.text('Andres Zapata', 15, bankInfoY + 24);
+  doc.text('No. 3113559747', 15, bankInfoY + 15);
+  doc.text('Hernan Andres Zapata', 15, bankInfoY + 20);
   
   // Total final
   doc.setFontSize(14);
