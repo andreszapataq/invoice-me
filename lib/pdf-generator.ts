@@ -85,7 +85,7 @@ export async function generateInvoicePDF(invoice: Invoice, customerInfo: Custome
   
   // Cantidad
   currentX += (pageWidth - 30) * colWidths[1];
-  doc.text('1', currentX, contentY);
+  doc.text('1', currentX + 5, contentY);
   
   // Total
   currentX += (pageWidth - 30) * colWidths[2];
