@@ -36,6 +36,9 @@ export function InvoiceForm({ onCancel }: InvoiceFormProps) {
   const [formData, setFormData] = useState<InvoiceFormData>(DEFAULT_FORM_DATA);
   const [formattedAmount, setFormattedAmount] = useState<string>('');
   const [previewInvoice, setPreviewInvoice] = useState<Invoice | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [submitError, setSubmitError] = useState<string>('');
+  const [submitSuccess, setSubmitSuccess] = useState<string>('');
 
   // Cuando formData.amount cambia, actualizar el valor formateado
   useEffect(() => {
@@ -158,6 +161,90 @@ export function InvoiceForm({ onCancel }: InvoiceFormProps) {
     setPreviewInvoice(previewData);
   };
 
+  const handleSendByEmail = async () => {
+    setIsSubmitting(true);
+    setSubmitError('');
+    setSubmitSuccess('');
+
+    try {
+      const response = await fetch('/api/invoices/send-now', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: formData.email,
+          amount: formData.amount,
+          frequency: formData.frequency,
+          dueDateDay: formData.dueDateDay,
+          concept: formData.concept
+        }),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        setSubmitSuccess('¡Factura enviada exitosamente por correo!');
+        // Limpiar el formulario después del envío exitoso
+        setTimeout(() => {
+          setFormData(DEFAULT_FORM_DATA);
+          setFormattedAmount('');
+          setSubmitSuccess('');
+          if (onCancel) onCancel();
+        }, 2000);
+      } else {
+        setSubmitError(result.error || 'Error enviando la factura');
+      }
+    } catch (error) {
+      setSubmitError('Error de conexión. Por favor intenta de nuevo.');
+      console.error('Error enviando factura:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleScheduleInvoice = async () => {
+    setIsSubmitting(true);
+    setSubmitError('');
+    setSubmitSuccess('');
+
+    try {
+      const response = await fetch('/api/invoices/schedule', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: formData.email,
+          amount: formData.amount,
+          frequency: formData.frequency,
+          dueDateDay: formData.dueDateDay,
+          concept: formData.concept
+        }),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        setSubmitSuccess('¡Factura programada exitosamente!');
+        // Limpiar el formulario después del envío exitoso
+        setTimeout(() => {
+          setFormData(DEFAULT_FORM_DATA);
+          setFormattedAmount('');
+          setSubmitSuccess('');
+          if (onCancel) onCancel();
+        }, 2000);
+      } else {
+        setSubmitError(result.error || 'Error programando la factura');
+      }
+    } catch (error) {
+      setSubmitError('Error de conexión. Por favor intenta de nuevo.');
+      console.error('Error programando factura:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const handleCancel = () => {
     setFormData(DEFAULT_FORM_DATA);
     if (onCancel) {
@@ -269,14 +356,46 @@ export function InvoiceForm({ onCancel }: InvoiceFormProps) {
               />
             </div>
             
-            <div className="flex gap-2 justify-end pt-2">
-              <Button type="button" variant="outline" onClick={handleCancel}>
+            <div className="flex flex-col sm:flex-row gap-2 justify-end pt-4">
+              <Button 
+                type="button" 
+                onClick={handleSendByEmail}
+                disabled={isSubmitting}
+                className="w-full sm:w-auto"
+              >
+                {isSubmitting ? 'Enviando...' : 'Enviar por correo'}
+              </Button>
+              <Button 
+                type="button" 
+                onClick={handleScheduleInvoice}
+                disabled={isSubmitting}
+                variant="secondary"
+                className="w-full sm:w-auto"
+              >
+                {isSubmitting ? 'Programando...' : 'Programar envío'}
+              </Button>
+            </div>
+            
+            <div className="flex flex-col sm:flex-row gap-2 justify-end pt-2">
+              <Button type="button" variant="link" onClick={handleCancel} className="w-full sm:w-auto">
                 Cancelar
               </Button>
-              <Button type="submit">
+              <Button type="submit" variant="link" className="w-full sm:w-auto">
                 Vista Previa
               </Button>
             </div>
+            
+            {/* Mostrar mensajes de éxito o error */}
+            {submitSuccess && (
+              <div className="mt-4 p-3 bg-green-100 border border-green-400 text-green-700 rounded">
+                {submitSuccess}
+              </div>
+            )}
+            {submitError && (
+              <div className="mt-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+                {submitError}
+              </div>
+            )}
           </form>
         </>
       ) : (
