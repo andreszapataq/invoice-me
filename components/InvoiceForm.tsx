@@ -22,6 +22,7 @@ interface InvoiceFormData {
 
 interface InvoiceFormProps {
   onCancel?: () => void;
+  onSuccess?: () => void;
 }
 
 const DEFAULT_FORM_DATA: InvoiceFormData = {
@@ -32,7 +33,7 @@ const DEFAULT_FORM_DATA: InvoiceFormData = {
   concept: ''
 };
 
-export function InvoiceForm({ onCancel }: InvoiceFormProps) {
+export function InvoiceForm({ onCancel, onSuccess }: InvoiceFormProps) {
   const [formData, setFormData] = useState<InvoiceFormData>(DEFAULT_FORM_DATA);
   const [formattedAmount, setFormattedAmount] = useState<string>('');
   const [previewInvoice, setPreviewInvoice] = useState<Invoice | null>(null);
@@ -191,6 +192,7 @@ export function InvoiceForm({ onCancel }: InvoiceFormProps) {
           setFormattedAmount('');
           setSubmitSuccess('');
           if (onCancel) onCancel();
+          if (onSuccess) onSuccess();
         }, 2000);
       } else {
         setSubmitError(result.error || 'Error enviando la factura');
@@ -233,6 +235,7 @@ export function InvoiceForm({ onCancel }: InvoiceFormProps) {
           setFormattedAmount('');
           setSubmitSuccess('');
           if (onCancel) onCancel();
+          if (onSuccess) onSuccess();
         }, 2000);
       } else {
         setSubmitError(result.error || 'Error programando la factura');
@@ -377,11 +380,11 @@ export function InvoiceForm({ onCancel }: InvoiceFormProps) {
             </div>
             
             <div className="flex flex-col sm:flex-row gap-2 justify-end pt-2">
-              <Button type="button" variant="link" onClick={handleCancel} className="w-full sm:w-auto">
-                Cancelar
-              </Button>
               <Button type="submit" variant="link" className="w-full sm:w-auto">
                 Vista Previa
+              </Button>
+              <Button type="button" variant="link" onClick={handleCancel} className="w-full sm:w-auto">
+                Cancelar
               </Button>
             </div>
             

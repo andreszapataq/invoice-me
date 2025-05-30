@@ -48,7 +48,8 @@ import {
 } from "@/components/ui/tooltip";
 
 // Importaciones de datos y componentes de tabla
-import { sampleInvoices, type Invoice } from "@/lib/data"; // Ajusta ruta
+import { type Invoice } from "@/lib/data"; // Ajusta ruta
+import { ScheduledInvoice, supabase } from "@/lib/supabase"; // Importar Supabase
 import { createColumns } from "@/components/Columns"; // Importamos la función createColumns en lugar de columns
 import { DataTableCore } from "@/components/DataTableCore"; // Ajusta ruta
 import { InvoiceForm } from "@/components/InvoiceForm"; // Importar el componente de formulario
@@ -69,22 +70,90 @@ const fuzzyFilter: FilterFn<Invoice> = (row, columnId, value, addMeta) => {
 
 export default function Home() {
   // Estado para almacenar las facturas
-  const [invoices, setInvoices] = React.useState<Invoice[]>(() => sampleInvoices);
+  const [invoices, setInvoices] = React.useState<Invoice[]>([]);
+  const [isLoading, setIsLoading] = React.useState(true);
   const data = React.useMemo(() => invoices, [invoices]); // Usar el estado como fuente de datos
   
-  // Función para cambiar el estado de una factura
-  const toggleInvoiceStatus = React.useCallback((invoiceId: string) => {
-    setInvoices(prevInvoices => 
-      prevInvoices.map(invoice => {
-        if (invoice.id === invoiceId) {
-          // Alternar entre "Pagado" y "Sin Pago" (eliminar "En Proceso")
-          const newStatus = invoice.status === "Pagado" ? "Sin Pago" : "Pagado";
-          return { ...invoice, status: newStatus };
-        }
-        return invoice;
-      })
-    );
+  // Función para convertir ScheduledInvoice a Invoice
+  const convertScheduledToInvoice = (scheduledInvoice: ScheduledInvoice): Invoice => ({
+    id: scheduledInvoice.id,
+    status: scheduledInvoice.is_active ? "En Proceso" : "Sin Pago",
+    email: scheduledInvoice.email,
+    amount: scheduledInvoice.amount,
+    frequency: scheduledInvoice.frequency as 'monthly' | 'biweekly',
+    concept: scheduledInvoice.concept,
+    date: scheduledInvoice.created_at?.split('T')[0] || new Date().toISOString().split('T')[0]
+  });
+  
+  // Función para cargar facturas desde Supabase
+  const loadInvoices = React.useCallback(async () => {
+    try {
+      setIsLoading(true);
+      const { data: scheduledInvoices, error } = await supabase
+        .from('scheduled_invoices')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (error) {
+        console.error('Error cargando facturas:', error);
+        return;
+      }
+      
+      // Convertir las facturas programadas al formato de la tabla
+      const convertedInvoices = scheduledInvoices?.map(convertScheduledToInvoice) || [];
+      setInvoices(convertedInvoices);
+    } catch (error) {
+      console.error('Error cargando facturas:', error);
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
+  
+  // Cargar facturas al montar el componente
+  React.useEffect(() => {
+    loadInvoices();
+  }, [loadInvoices]);
+  
+  // Función para cambiar el estado de una factura
+  const toggleInvoiceStatus = React.useCallback(async (invoiceId: string) => {
+    try {
+      // Encontrar la factura actual
+      const currentInvoice = invoices.find(inv => inv.id === invoiceId);
+      if (!currentInvoice) return;
+      
+      // Determinar nuevo estado
+      const newIsActive = currentInvoice.status !== "En Proceso";
+      
+      // Actualizar en Supabase
+      const { error } = await supabase
+        .from('scheduled_invoices')
+        .update({ is_active: newIsActive })
+        .eq('id', invoiceId);
+      
+      if (error) {
+        console.error('Error actualizando factura:', error);
+        return;
+      }
+      
+      // Actualizar estado local
+      setInvoices(prevInvoices => 
+        prevInvoices.map(invoice => {
+          if (invoice.id === invoiceId) {
+            const newStatus = newIsActive ? "En Proceso" : "Sin Pago";
+            return { ...invoice, status: newStatus };
+          }
+          return invoice;
+        })
+      );
+    } catch (error) {
+      console.error('Error actualizando factura:', error);
+    }
+  }, [invoices]);
+  
+  // Función para recargar facturas (para usar en el formulario)
+  const refreshInvoices = React.useCallback(() => {
+    loadInvoices();
+  }, [loadInvoices]);
   
   // Crear las columnas con la función de cambio de estado
   const tableColumns = React.useMemo(
@@ -251,7 +320,10 @@ export default function Home() {
                 <SheetDescription>Configura tus facturas automáticas</SheetDescription>
               </SheetHeader>
               <div className="p-4">
-                <InvoiceForm onCancel={() => setIsSheetOpen(false)} />
+                <InvoiceForm 
+                  onCancel={() => setIsSheetOpen(false)} 
+                  onSuccess={refreshInvoices}
+                />
               </div>
             </SheetContent>
           </Sheet>
@@ -307,33 +379,41 @@ export default function Home() {
             </div>
 
             {/* Componente Core de la Tabla */}
-            <DataTableCore table={table} columnsLength={tableColumns.length} />
+            {isLoading ? (
+              <div className="flex justify-center items-center py-8">
+                <div className="text-sm text-gray-500">Cargando facturas...</div>
+              </div>
+            ) : (
+              <DataTableCore table={table} columnsLength={tableColumns.length} />
+            )}
 
             {/* Fila de Paginación e Información */}
-            <div className="flex items-center justify-end space-x-2 py-4">
-              <div className="flex-1 text-sm text-muted-foreground">
-                {table.getFilteredSelectedRowModel().rows.length} de{" "}
-                {table.getFilteredRowModel().rows.length} fila(s) seleccionadas.
+            {!isLoading && (
+              <div className="flex items-center justify-end space-x-2 py-4">
+                <div className="flex-1 text-sm text-muted-foreground">
+                  {table.getFilteredSelectedRowModel().rows.length} de{" "}
+                  {table.getFilteredRowModel().rows.length} fila(s) seleccionadas.
+                </div>
+                <div className="space-x-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => table.previousPage()}
+                    disabled={!table.getCanPreviousPage()}
+                  >
+                    Anterior
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => table.nextPage()}
+                    disabled={!table.getCanNextPage()}
+                  >
+                    Siguiente
+                  </Button>
+                </div>
               </div>
-              <div className="space-x-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => table.previousPage()}
-                  disabled={!table.getCanPreviousPage()}
-                >
-                  Anterior
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => table.nextPage()}
-                  disabled={!table.getCanNextPage()}
-                >
-                  Siguiente
-                </Button>
-              </div>
-            </div>
+            )}
           </div>
         </div>
       </div>
