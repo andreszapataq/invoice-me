@@ -414,7 +414,7 @@ export function InvoiceForm({ onCancel, onSuccess }: InvoiceFormProps) {
           />
           
           <div className="flex gap-2 justify-end mt-4">
-            <Button type="button" variant="outline" onClick={() => setPreviewInvoice(null)}>
+            <Button type="button" variant="link" onClick={() => setPreviewInvoice(null)}>
               Volver al formulario
             </Button>
           </div>

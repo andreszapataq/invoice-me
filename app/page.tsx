@@ -314,12 +314,12 @@ export default function Home() {
                 <Settings className="size-4" />
               </Button>
             </SheetTrigger>
-            <SheetContent side="left" className="p-6">
-              <SheetHeader>
+            <SheetContent side="left" className="p-0 flex flex-col h-full">
+              <SheetHeader className="p-6 pb-4 border-b">
                 <SheetTitle>Menú</SheetTitle>
                 <SheetDescription>Configura tus facturas automáticas</SheetDescription>
               </SheetHeader>
-              <div className="p-4">
+              <div className="flex-1 overflow-y-auto p-6">
                 <InvoiceForm 
                   onCancel={() => setIsSheetOpen(false)} 
                   onSuccess={refreshInvoices}
