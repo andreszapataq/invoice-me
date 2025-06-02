@@ -150,7 +150,7 @@ export function InvoiceForm({ onCancel, onSuccess }: InvoiceFormProps) {
     // Crear una factura temporal para la vista previa
     const previewData: Invoice = {
       id: `inv-${Date.now().toString().slice(-6)}`,
-      status: "En Proceso",
+      status: "Pendiente",
       email: formData.email,
       amount: parseInt(formData.amount),
       frequency: formData.frequency,
