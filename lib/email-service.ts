@@ -12,12 +12,14 @@ class EmailService {
     const apiKey = process.env.RESEND_API_KEY;
     this.isDevelopment = process.env.NODE_ENV !== 'production';
     
-    if (!apiKey && !this.isDevelopment) {
-      throw new Error('RESEND_API_KEY is required in production');
+    // Si no hay API key, usar modo simulación
+    if (!apiKey) {
+      console.log('⚠️ RESEND_API_KEY no configurada. Los correos se simularán.');
+      this.resend = new Resend('test_key');
+    } else {
+      console.log('✅ RESEND_API_KEY configurada. Los correos se enviarán realmente.');
+      this.resend = new Resend(apiKey);
     }
-    
-    // Inicializar Resend solo si tenemos API key o estamos en desarrollo
-    this.resend = new Resend(apiKey || 'test_key');
   }
 
   async sendInvoiceEmail(scheduledInvoice: ScheduledInvoice): Promise<{ success: boolean; error?: string }> {
@@ -41,13 +43,14 @@ class EmailService {
         id: "94541677"
       });
 
-      // En modo desarrollo, solo simular
-      if (this.isDevelopment) {
+      // Si no hay API key de Resend, solo simular
+      if (!process.env.RESEND_API_KEY) {
         console.log(`📧 [SIMULADO] Enviando factura a ${scheduledInvoice.email}`);
         console.log(`💰 Concepto: ${scheduledInvoice.concept}`);
         console.log(`💵 Monto: $${scheduledInvoice.amount.toLocaleString('es-CO')}`);
         console.log(`📅 Frecuencia: ${scheduledInvoice.frequency === 'monthly' ? 'Mensual' : 'Quincenal'}`);
         console.log(`📄 PDF generado exitosamente`);
+        console.log(`⚠️ Para enviar correos reales, configura RESEND_API_KEY en tu archivo .env`);
         
         // Simular tiempo de procesamiento
         await new Promise(resolve => setTimeout(resolve, 1000));
@@ -55,6 +58,8 @@ class EmailService {
       }
 
       // Envío real con Resend
+      console.log(`📧 [REAL] Enviando factura a ${scheduledInvoice.email} usando Resend...`);
+      
       const emailHTML = this.generateEmailHTML(scheduledInvoice);
       const pdfBuffer = this.base64ToBuffer(pdfData);
 
@@ -72,7 +77,7 @@ class EmailService {
       });
 
       if (error) {
-        console.error('Error enviando con Resend:', error);
+        console.error('❌ Error enviando con Resend:', error);
         return { 
           success: false, 
           error: error.message || 'Error enviando correo'
@@ -83,7 +88,7 @@ class EmailService {
       return { success: true };
 
     } catch (error) {
-      console.error('Error en servicio de correo:', error);
+      console.error('❌ Error en servicio de correo:', error);
       return { 
         success: false, 
         error: error instanceof Error ? error.message : 'Error desconocido'

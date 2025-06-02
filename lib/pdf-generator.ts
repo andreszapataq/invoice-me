@@ -43,7 +43,7 @@ export async function generateInvoicePDF(invoice: Invoice, customerInfo: Custome
   doc.text(`C.C. ${customerInfo.id || ''}`, 15, 75);
   
   // Dirección en un formato específico
-  doc.text("CR 97 #6 - 25", 15, 80);
+  doc.text("CR 97 # 6 - 25", 15, 80);
   doc.text("Cali - Colombia", 15, 85); // Con guion
   
   // Tabla de items
@@ -103,9 +103,27 @@ export async function generateInvoicePDF(invoice: Invoice, customerInfo: Custome
   doc.text('Cuenta Bancaria', 15, bankInfoY);
   
   doc.setFontSize(10);
-  doc.text('Nequi Colombia', 15, bankInfoY + 10);
+  doc.text('DaviPlata', 15, bankInfoY + 10);
   doc.text('No. 3113559747', 15, bankInfoY + 15);
-  doc.text('Hernan Andres Zapata', 15, bankInfoY + 20);
+  doc.text('Hernan Andres Zapata Quiñonez', 15, bankInfoY + 20);
+
+  // Nombre con link funcional
+const linkText = 'Puedes pagar haciendo click aquí';
+const linkX = 15;
+const linkY = bankInfoY + 25;
+
+doc.setTextColor('#0066CC'); // Azul para link
+doc.text(linkText, linkX, linkY);
+
+const textWidth = doc.getTextWidth(linkText);
+const textHeight = 4;
+
+// Agregar link (cambia la URL por la que necesites)
+doc.link(linkX, linkY - textHeight, textWidth, textHeight, { 
+  url: 'https://www.daviplata.com/wps/portal/daviplata/Home/ComoMeterlePlata/!ut/p/z1/pY9NC4JAEIZ_SwevzuRHSrfVwoooDCrbS2hsq7G6spr-_VY6Bdaluc3wPC_vAIUEaJV2BU_bQlap0PuFzq5e7OAqdKa7iIRLjNHy1ouTjei7cP4JRA7Qf3wNDD5-GYLapyMIweBgBUOBvTUKfGRsgHIhs_e7pMpsnwNV7M4UU-ZT6XPetnUzN9DAvu9NLiUXzLzJ0sAxJZdNC8knCXV5TPDhim5LJi9p7Bv4/dz/d5/L2dBISEvZ0FBIS9nQSEh/' 
+});
+
+doc.setTextColor(textColor); // Restaurar color
   
   // Total final
   doc.setFontSize(14);

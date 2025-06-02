@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { scheduler } from '@/lib/scheduler';
+import { emailService } from '@/lib/email-service';
+import { ScheduledInvoice } from '@/lib/supabase';
 
 export async function POST(request: NextRequest) {
   try {
@@ -24,25 +25,62 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Programar la factura para envío inmediato
-    const invoiceId = await scheduler.scheduleImmediateInvoice({
-      email,
-      amount: parseInt(amount),
-      frequency,
-      due_date_day: parseInt(dueDateDay),
-      concept
-    });
+    // Validar monto
+    const numericAmount = parseInt(amount);
+    if (isNaN(numericAmount) || numericAmount <= 0) {
+      return NextResponse.json(
+        { error: 'El monto debe ser un número mayor a 0' },
+        { status: 400 }
+      );
+    }
 
-    return NextResponse.json({
-      success: true,
-      invoiceId,
-      message: 'Factura enviada exitosamente por correo'
-    });
+    // Validar frecuencia
+    if (!['monthly', 'biweekly'].includes(frequency)) {
+      return NextResponse.json(
+        { error: 'Frecuencia debe ser "monthly" o "biweekly"' },
+        { status: 400 }
+      );
+    }
+
+    // Crear objeto temporal de factura para envío inmediato (NO se guarda en DB)
+    const temporaryInvoice: ScheduledInvoice = {
+      id: `temp-${Date.now()}`, // ID temporal único
+      email,
+      amount: numericAmount,
+      frequency: frequency as 'monthly' | 'biweekly',
+      due_date_day: parseInt(dueDateDay),
+      concept,
+      is_active: true,
+      created_at: new Date().toISOString(),
+      next_send_date: new Date().toISOString().split('T')[0], // Hoy
+      last_sent: null
+    };
+
+    console.log(`⚡ Enviando factura inmediata a ${email}`);
+    console.log(`💰 Concepto: ${concept}, Monto: $${numericAmount.toLocaleString('es-CO')}`);
+
+    // Enviar correo inmediatamente usando el servicio de email
+    const emailResult = await emailService.sendInvoiceEmail(temporaryInvoice);
+
+    if (emailResult.success) {
+      console.log(`✅ Factura enviada exitosamente a ${email}`);
+      return NextResponse.json({
+        success: true,
+        message: 'Factura enviada exitosamente por correo',
+        timestamp: new Date().toISOString()
+      });
+    } else {
+      console.error(`❌ Error enviando factura a ${email}: ${emailResult.error}`);
+      return NextResponse.json(
+        { error: emailResult.error || 'Error enviando la factura por correo' },
+        { status: 500 }
+      );
+    }
 
   } catch (error) {
-    console.error('Error enviando factura:', error);
+    console.error('Error en envío inmediato de factura:', error);
     return NextResponse.json(
-      { error: 'Error enviando la factura' },
+      { error: 'Error interno del servidor' },
       { status: 500 }
     );
   }
