@@ -63,7 +63,9 @@ export async function POST(request: NextRequest) {
       frequency,
       due_date_day: numericDay,
       concept,
-      is_active: true
+      is_active: true,
+      last_sent: null,
+      status: 'Programada'
     });
 
     return NextResponse.json({
