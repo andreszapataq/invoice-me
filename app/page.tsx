@@ -77,13 +77,23 @@ export default function Home() {
   
   // Función para convertir ScheduledInvoice a Invoice
   const convertScheduledToInvoice = (scheduledInvoice: ScheduledInvoice): Invoice => {
-    // Mejorar el manejo de fechas para evitar problemas de zona horaria
+    // Determinar el status
+    const status = (scheduledInvoice.status as 'Pendiente' | 'Pagada' | 'Programada') || 
+                  (scheduledInvoice.is_active ? "Programada" : "Pendiente");
+    
+    // Elegir la fecha apropiada según el estado
     let formattedDate: string;
-    if (scheduledInvoice.created_at) {
-      // Extraer solo la parte de fecha y crear una fecha local
+    
+    if (status === "Programada" && scheduledInvoice.next_send_date) {
+      // Para facturas programadas, mostrar la fecha de envío programada
+      const [year, month, day] = scheduledInvoice.next_send_date.split('-').map(Number);
+      const localDate = new Date(year, month - 1, day);
+      formattedDate = localDate.toISOString().split('T')[0];
+    } else if (scheduledInvoice.created_at) {
+      // Para facturas ya enviadas (Pendiente/Pagada), mostrar fecha de creación
       const dateOnly = scheduledInvoice.created_at.split('T')[0];
       const [year, month, day] = dateOnly.split('-').map(Number);
-      const localDate = new Date(year, month - 1, day); // month - 1 porque los meses son 0-indexed
+      const localDate = new Date(year, month - 1, day);
       formattedDate = localDate.toISOString().split('T')[0];
     } else {
       formattedDate = new Date().toISOString().split('T')[0];
@@ -91,9 +101,7 @@ export default function Home() {
     
     return {
       id: scheduledInvoice.id,
-      // Usar el campo status de la base de datos si existe, sino usar la lógica anterior
-      status: (scheduledInvoice.status as 'Pendiente' | 'Pagada' | 'Programada') || 
-              (scheduledInvoice.is_active ? "Programada" : "Pendiente"),
+      status: status,
       email: scheduledInvoice.email,
       amount: scheduledInvoice.amount,
       frequency: scheduledInvoice.frequency as 'monthly' | 'biweekly',

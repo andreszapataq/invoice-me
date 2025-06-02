@@ -104,10 +104,19 @@ export const createColumns = (
     header: "Estado",
     cell: ({ row }) => {
       const status = row.getValue("status") as string;
+      
+      // Determinar el variant del badge según el estado
+      let variant: "default" | "secondary" | "outline" = "secondary";
+      if (status === "Pagada") {
+        variant = "default";
+      } else if (status === "Pendiente") {
+        variant = "outline";
+      } else if (status === "Programada") {
+        variant = "secondary";
+      }
+      
       return (
-        <Badge 
-          variant={status === "Pagada" ? "default" : "secondary"}
-        >
+        <Badge variant={variant}>
           {status}
         </Badge>
       );
