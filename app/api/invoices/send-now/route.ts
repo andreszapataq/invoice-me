@@ -43,21 +43,27 @@ export async function POST(request: NextRequest) {
     }
 
     // Crear objeto temporal de factura para envío inmediato (NO se guarda en DB)
+    // IMPORTANTE: Para "Enviar Ahora" siempre usar la fecha actual, ignorar día de corte
+    const currentDate = new Date();
+    const currentDateString = currentDate.toISOString();
+    const currentDateOnly = currentDate.toISOString().split('T')[0];
+    
     const temporaryInvoice: ScheduledInvoice = {
       id: `temp-${Date.now()}`, // ID temporal único
       email,
       amount: numericAmount,
       frequency: frequency as 'monthly' | 'biweekly',
-      due_date_day: parseInt(dueDateDay),
+      due_date_day: parseInt(dueDateDay), // Se mantiene para referencia pero no afecta la fecha
       concept,
       is_active: true,
-      created_at: new Date().toISOString(),
-      next_send_date: new Date().toISOString().split('T')[0], // Hoy
+      created_at: currentDateString,
+      next_send_date: currentDateOnly, // Siempre hoy para envío inmediato
       last_sent: null
     };
 
     console.log(`⚡ Enviando factura inmediata a ${email}`);
     console.log(`💰 Concepto: ${concept}, Monto: $${numericAmount.toLocaleString('es-CO')}`);
+    console.log(`📅 Fecha de envío: ${currentDateOnly} (ignorando día de corte: ${dueDateDay})`);
 
     // Enviar correo inmediatamente usando el servicio de email
     const emailResult = await emailService.sendInvoiceEmail(temporaryInvoice);

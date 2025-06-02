@@ -17,7 +17,7 @@ export async function generateInvoicePDF(invoice: Invoice, customerInfo: Custome
   const pageWidth = doc.internal.pageSize.getWidth();
   
   // Configuración de fuentes y colores
-  const primaryColor = '#FF6633'; // Color naranja para Invoice Me
+  const primaryColor = '#FF6633'; // Color naranjo para Invoice Me
   const textColor = '#333333';
   
   // Título - Invoice Me con líneas más juntas y más bold
@@ -30,9 +30,20 @@ export async function generateInvoicePDF(invoice: Invoice, customerInfo: Custome
   doc.setFontSize(12);
   doc.setTextColor(textColor);
   
-  // Formatear la fecha
-  const date = new Date(invoice.date);
+  // Formatear la fecha - asegurar que use la fecha correcta sin problemas de zona horaria
+  let date: Date;
+  if (invoice.date.includes('T')) {
+    // Si viene con tiempo, usar solo la parte de fecha
+    const dateParts = invoice.date.split('T')[0].split('-');
+    date = new Date(parseInt(dateParts[0]), parseInt(dateParts[1]) - 1, parseInt(dateParts[2]));
+  } else {
+    // Si es solo fecha, parsear directamente
+    const dateParts = invoice.date.split('-');
+    date = new Date(parseInt(dateParts[0]), parseInt(dateParts[1]) - 1, parseInt(dateParts[2]));
+  }
+  
   const formattedDate = `${date.getDate()} ${getMonthName(date).toLowerCase()} ${date.getFullYear()}`;
+  console.log(`📄 PDF generando con fecha: ${invoice.date} -> ${formattedDate}`);
   doc.text(formattedDate, pageWidth - 15, 25, { align: 'right' }); // Ajusté la posición Y
   
   // Datos del cliente
@@ -125,13 +136,13 @@ doc.link(linkX, linkY - textHeight, textWidth, textHeight, {
 
 doc.setTextColor(textColor); // Restaurar color
   
-  // Total final
+  // Total final - alineado horizontalmente con "Cuenta Bancaria"
   doc.setFontSize(14);
-  doc.text('Total', pageWidth - 80, bankInfoY + 15);
+  doc.text('Total', pageWidth - 80, bankInfoY); // Misma Y que "Cuenta Bancaria"
   
   doc.setFontSize(14);
   doc.setTextColor(textColor);
-  doc.text(formattedAmount, pageWidth - 15, bankInfoY + 15, { align: 'right' });
+  doc.text(formattedAmount, pageWidth - 15, bankInfoY, { align: 'right' }); // Misma Y también
   
   // Pie de página
   doc.setFontSize(10);

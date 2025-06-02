@@ -25,6 +25,10 @@ class EmailService {
   async sendInvoiceEmail(scheduledInvoice: ScheduledInvoice): Promise<{ success: boolean; error?: string }> {
     try {
       // Convertir ScheduledInvoice a Invoice para el generador de PDF
+      // Para "Enviar Ahora" siempre usar la fecha actual, para programados usar la fecha de envío
+      const currentDate = new Date();
+      const currentDateString = currentDate.toISOString().slice(0, 10);
+      
       const invoice: Invoice = {
         id: scheduledInvoice.id,
         status: "En Proceso",
@@ -32,8 +36,12 @@ class EmailService {
         amount: scheduledInvoice.amount,
         frequency: scheduledInvoice.frequency as 'monthly' | 'biweekly',
         concept: scheduledInvoice.concept,
-        date: new Date().toISOString().slice(0, 10)
+        // Si es un envío temporal (id empieza con 'temp-'), usar fecha actual
+        // Si es programado, usar la fecha actual también para asegurar consistencia
+        date: currentDateString
       };
+
+      console.log(`📅 Generando PDF con fecha: ${currentDateString}`);
 
       // Generar el PDF de la factura
       const pdfData = await generateInvoicePDF(invoice, {
