@@ -1,0 +1,119 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { dbManager } from '@/lib/database';
+import { emailService } from '@/lib/email-service';
+
+export async function GET(request: NextRequest) {
+  try {
+    // Verificar que sea una llamada de cron job de Vercel
+    const authHeader = request.headers.get('authorization');
+    if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    console.log('🚀 [CRON] Iniciando procesamiento de facturas programadas...');
+    
+    // Obtener facturas que deben enviarse hoy
+    const invoicesDue = await dbManager.getInvoicesDueToday();
+    
+    if (invoicesDue.length === 0) {
+      console.log('📋 [CRON] No hay facturas programadas para hoy');
+      return NextResponse.json({
+        success: true,
+        message: 'No hay facturas programadas para procesar',
+        processed: 0
+      });
+    }
+
+    console.log(`📧 [CRON] ${invoicesDue.length} factura(s) programada(s) para envío hoy`);
+
+    let successCount = 0;
+    let errorCount = 0;
+    const results = [];
+
+    // Procesar cada factura
+    for (const invoice of invoicesDue) {
+      try {
+        console.log(`📤 [CRON] Procesando factura: ${invoice.concept} para ${invoice.email}`);
+        
+        // Enviar el correo
+        const result = await emailService.sendInvoiceEmail(invoice);
+        
+        if (result.success) {
+          // Actualizar la fecha de último envío y calcular próxima fecha
+          await dbManager.updateLastSent(invoice.id);
+          await dbManager.logEmailSent(invoice.id, invoice.email, 'success');
+          
+          console.log(`✅ [CRON] Factura enviada exitosamente a ${invoice.email}`);
+          successCount++;
+          results.push({
+            id: invoice.id,
+            email: invoice.email,
+            concept: invoice.concept,
+            status: 'success'
+          });
+        } else {
+          // Registrar el error
+          await dbManager.logEmailSent(invoice.id, invoice.email, 'failed', result.error);
+          console.error(`❌ [CRON] Error enviando factura a ${invoice.email}: ${result.error}`);
+          errorCount++;
+          results.push({
+            id: invoice.id,
+            email: invoice.email,
+            concept: invoice.concept,
+            status: 'error',
+            error: result.error
+          });
+        }
+        
+        // Esperar un poco entre envíos para no sobrecargar el servicio de correo
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+      } catch (error) {
+        console.error(`❌ [CRON] Error procesando factura ${invoice.id}:`, error);
+        
+        // Registrar el error
+        await dbManager.logEmailSent(
+          invoice.id, 
+          invoice.email, 
+          'failed', 
+          error instanceof Error ? error.message : 'Error desconocido'
+        );
+        
+        errorCount++;
+        results.push({
+          id: invoice.id,
+          email: invoice.email,
+          concept: invoice.concept,
+          status: 'error',
+          error: error instanceof Error ? error.message : 'Error desconocido'
+        });
+      }
+    }
+    
+    console.log(`✅ [CRON] Procesamiento completado. Éxitos: ${successCount}, Errores: ${errorCount}`);
+    
+    return NextResponse.json({
+      success: true,
+      message: `Procesamiento completado`,
+      processed: invoicesDue.length,
+      successful: successCount,
+      errors: errorCount,
+      results
+    });
+
+  } catch (error) {
+    console.error('❌ [CRON] Error general en procesamiento:', error);
+    return NextResponse.json(
+      { 
+        error: 'Error interno del servidor', 
+        details: error instanceof Error ? error.message : 'Error desconocido'
+      },
+      { status: 500 }
+    );
+  }
+}
+
+// También permitir POST por si acaso
+export async function POST(request: NextRequest) {
+  return GET(request);
+} 

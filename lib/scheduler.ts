@@ -135,7 +135,9 @@ class SchedulerService {
       // Crear la factura programada
       const invoiceId = await dbManager.createScheduledInvoice({
         ...invoiceData,
-        is_active: true
+        is_active: true,
+        last_sent: null,
+        status: 'Programada'
       });
       
       // Forzar el procesamiento
@@ -151,10 +153,13 @@ class SchedulerService {
 
 export const scheduler = new SchedulerService();
 
-// Inicializar el scheduler automáticamente en producción
-if (typeof window === 'undefined') { // Solo en el servidor
+// Solo inicializar el scheduler automáticamente en desarrollo local
+if (typeof window === 'undefined' && process.env.NODE_ENV === 'development') {
   // Esperar un poco antes de iniciar para que todo esté configurado
   setTimeout(() => {
+    console.log('🔧 Iniciando scheduler local para desarrollo...');
     scheduler.start();
   }, 5000);
+} else if (typeof window === 'undefined' && process.env.NODE_ENV === 'production') {
+  console.log('🚀 En producción - usando Vercel Cron Jobs en lugar del scheduler local');
 } 
