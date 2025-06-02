@@ -40,23 +40,6 @@ export function InvoiceForm({ onCancel, onSuccess }: InvoiceFormProps) {
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [submitError, setSubmitError] = useState<string>('');
   const [submitSuccess, setSubmitSuccess] = useState<string>('');
-  const [emailConfigured, setEmailConfigured] = useState<boolean | null>(null);
-
-  // Verificar si el email está configurado
-  useEffect(() => {
-    const checkEmailConfig = async () => {
-      try {
-        const response = await fetch('/api/email/check-config');
-        const result = await response.json();
-        setEmailConfigured(result.configured);
-      } catch (error) {
-        console.error('Error verificando configuración de email:', error);
-        setEmailConfigured(false);
-      }
-    };
-    
-    checkEmailConfig();
-  }, []);
 
   // Cuando formData.amount cambia, actualizar el valor formateado
   useEffect(() => {
@@ -284,46 +267,6 @@ export function InvoiceForm({ onCancel, onSuccess }: InvoiceFormProps) {
       {!previewInvoice ? (
         <>
           <h3 className="font-medium mb-2">Crear Nueva Factura</h3>
-          
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
-            <h4 className="font-medium text-blue-900 mb-2">💡 Opciones de Envío</h4>
-            <div className="space-y-2 text-sm text-blue-800">
-              <div className="flex items-start gap-2">
-                <span className="text-blue-600">📧</span>
-                <div>
-                  <strong>Enviar Ahora:</strong> La factura se envía inmediatamente por correo electrónico.
-                </div>
-              </div>
-              <div className="flex items-start gap-2">
-                <span className="text-blue-600">⏰</span>
-                <div>
-                  <strong>Programar Envío:</strong> La factura se programa para enviarse automáticamente según la frecuencia y día de corte seleccionados.
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {emailConfigured === false && (
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
-              <h4 className="font-medium text-yellow-900 mb-2">⚠️ Modo Simulación</h4>
-              <p className="text-sm text-yellow-800 mb-2">
-                Los correos actualmente se <strong>simulan</strong> y no se envían realmente.
-              </p>
-              <p className="text-xs text-yellow-700">
-                Para enviar correos reales, configura <code className="bg-yellow-100 px-1 rounded">RESEND_API_KEY</code> en tu archivo <code className="bg-yellow-100 px-1 rounded">.env.local</code>. 
-                Ver <code className="bg-yellow-100 px-1 rounded">CONFIGURACION_EMAIL.md</code> para más detalles.
-              </p>
-            </div>
-          )}
-
-          {emailConfigured === true && (
-            <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
-              <h4 className="font-medium text-green-900 mb-2">✅ Correos Configurados</h4>
-              <p className="text-sm text-green-800">
-                Los correos se enviarán realmente usando Resend.
-              </p>
-            </div>
-          )}
           
           <form onSubmit={handleSubmit} className="space-y-4 py-4">
             <div className="space-y-2">

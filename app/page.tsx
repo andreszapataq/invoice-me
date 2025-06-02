@@ -317,7 +317,7 @@ export default function Home() {
             <SheetContent side="left" className="p-0 flex flex-col h-full">
               <SheetHeader className="p-6 pb-4 border-b">
                 <SheetTitle>Crear Factura</SheetTitle>
-                <SheetDescription>Envía facturas inmediatamente o programa envíos automáticos recurrentes</SheetDescription>
+                <SheetDescription>Envía facturas inmediatamente o programa envíos automáticos recurrentes.</SheetDescription>
               </SheetHeader>
               <div className="flex-1 overflow-y-auto p-6">
                 <InvoiceForm 
