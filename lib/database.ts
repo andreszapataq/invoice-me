@@ -3,7 +3,12 @@ import { supabase, ScheduledInvoice } from './supabase';
 class SupabaseDatabaseManager {
   
   async createScheduledInvoice(invoice: Omit<ScheduledInvoice, 'id' | 'created_at' | 'next_send_date'>): Promise<string> {
-    const nextSendDate = this.calculateNextSendDate(invoice.frequency, invoice.due_date_day);
+    const nextSendDate = this.calculateNextSendDate(invoice.frequency as 'monthly' | 'biweekly', invoice.due_date_day);
+    
+    // Determinar el status basado en si es activa o no
+    // Activa = Programada (se enviará automáticamente)
+    // Inactiva = Pendiente (ya se envió o está esperando pago)
+    const status = invoice.is_active ? 'Programada' : 'Pendiente';
 
     const { data, error } = await supabase
       .from('scheduled_invoices')
@@ -14,6 +19,8 @@ class SupabaseDatabaseManager {
         due_date_day: invoice.due_date_day,
         concept: invoice.concept,
         is_active: invoice.is_active,
+        last_sent: invoice.last_sent,
+        status: status,
         next_send_date: nextSendDate
       })
       .select('id')
@@ -78,7 +85,7 @@ class SupabaseDatabaseManager {
     }
 
     const now = new Date().toISOString();
-    const nextSendDate = this.calculateNextSendDate(invoice.frequency, invoice.due_date_day);
+    const nextSendDate = this.calculateNextSendDate(invoice.frequency as 'monthly' | 'biweekly', invoice.due_date_day);
 
     const { error } = await supabase
       .from('scheduled_invoices')
@@ -164,6 +171,18 @@ class SupabaseDatabaseManager {
     if (error) {
       console.error('Error desactivando factura:', error);
       throw new Error(`Error desactivando factura: ${error.message}`);
+    }
+  }
+
+  async updateInvoiceStatus(id: string, status: 'Pendiente' | 'Pagada' | 'Programada'): Promise<void> {
+    const { error } = await supabase
+      .from('scheduled_invoices')
+      .update({ status: status })
+      .eq('id', id);
+
+    if (error) {
+      console.error('Error actualizando estado de factura:', error);
+      throw new Error(`Error actualizando estado: ${error.message}`);
     }
   }
 

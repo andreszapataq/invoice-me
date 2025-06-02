@@ -31,7 +31,7 @@ class EmailService {
       
       const invoice: Invoice = {
         id: scheduledInvoice.id,
-        status: "En Proceso",
+        status: "Pendiente",
         email: scheduledInvoice.email,
         amount: scheduledInvoice.amount,
         frequency: scheduledInvoice.frequency as 'monthly' | 'biweekly',

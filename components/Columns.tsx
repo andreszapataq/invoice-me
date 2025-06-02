@@ -63,8 +63,11 @@ export const createColumns = (
     },
     cell: ({ row }) => {
       const date = row.getValue("date") as string;
+      // Crear fecha local para evitar problemas de zona horaria
+      const [year, month, day] = date.split('-').map(Number);
+      const localDate = new Date(year, month - 1, day);
       // Formatear la fecha a formato español (DD/MM/YYYY)
-      const formattedDate = new Date(date).toLocaleDateString('es-ES');
+      const formattedDate = localDate.toLocaleDateString('es-ES');
       return <div>{formattedDate}</div>;
     },
   },
@@ -103,7 +106,7 @@ export const createColumns = (
       const status = row.getValue("status") as string;
       return (
         <Badge 
-          variant={status === "Pagado" ? "default" : "secondary"}
+          variant={status === "Pagada" ? "default" : "secondary"}
         >
           {status}
         </Badge>
@@ -120,7 +123,7 @@ export const createColumns = (
     enableHiding: false,
     cell: ({ row }) => {
       const invoice = row.original;
-      const isPaid = invoice.status === "Pagado";
+      const isPaid = invoice.status === "Pagada";
       
       return (
         <DropdownMenu>
@@ -136,7 +139,7 @@ export const createColumns = (
               onClick={() => toggleStatus(invoice.id)}
               className={isPaid ? "text-red-600" : "text-green-600"}
             >
-              {isPaid ? "Marcar como Sin Pago" : "Marcar como Pagado"}
+              {isPaid ? "Marcar como Pendiente" : "Marcar como Pagada"}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

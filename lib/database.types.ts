@@ -56,6 +56,7 @@ export type Database = {
           is_active: boolean | null
           last_sent: string | null
           next_send_date: string
+          status: string | null
         }
         Insert: {
           amount: number
@@ -68,6 +69,7 @@ export type Database = {
           is_active?: boolean | null
           last_sent?: string | null
           next_send_date: string
+          status?: string | null
         }
         Update: {
           amount?: number
@@ -80,6 +82,7 @@ export type Database = {
           is_active?: boolean | null
           last_sent?: string | null
           next_send_date?: string
+          status?: string | null
         }
         Relationships: []
       }

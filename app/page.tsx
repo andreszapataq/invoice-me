@@ -50,6 +50,7 @@ import {
 // Importaciones de datos y componentes de tabla
 import { type Invoice } from "@/lib/data"; // Ajusta ruta
 import { ScheduledInvoice, supabase } from "@/lib/supabase"; // Importar Supabase
+import { dbManager } from "@/lib/database"; // Importar dbManager
 import { createColumns } from "@/components/Columns"; // Importamos la función createColumns en lugar de columns
 import { DataTableCore } from "@/components/DataTableCore"; // Ajusta ruta
 import { InvoiceForm } from "@/components/InvoiceForm"; // Importar el componente de formulario
@@ -75,15 +76,31 @@ export default function Home() {
   const data = React.useMemo(() => invoices, [invoices]); // Usar el estado como fuente de datos
   
   // Función para convertir ScheduledInvoice a Invoice
-  const convertScheduledToInvoice = (scheduledInvoice: ScheduledInvoice): Invoice => ({
-    id: scheduledInvoice.id,
-    status: scheduledInvoice.is_active ? "En Proceso" : "Sin Pago",
-    email: scheduledInvoice.email,
-    amount: scheduledInvoice.amount,
-    frequency: scheduledInvoice.frequency as 'monthly' | 'biweekly',
-    concept: scheduledInvoice.concept,
-    date: scheduledInvoice.created_at?.split('T')[0] || new Date().toISOString().split('T')[0]
-  });
+  const convertScheduledToInvoice = (scheduledInvoice: ScheduledInvoice): Invoice => {
+    // Mejorar el manejo de fechas para evitar problemas de zona horaria
+    let formattedDate: string;
+    if (scheduledInvoice.created_at) {
+      // Extraer solo la parte de fecha y crear una fecha local
+      const dateOnly = scheduledInvoice.created_at.split('T')[0];
+      const [year, month, day] = dateOnly.split('-').map(Number);
+      const localDate = new Date(year, month - 1, day); // month - 1 porque los meses son 0-indexed
+      formattedDate = localDate.toISOString().split('T')[0];
+    } else {
+      formattedDate = new Date().toISOString().split('T')[0];
+    }
+    
+    return {
+      id: scheduledInvoice.id,
+      // Usar el campo status de la base de datos si existe, sino usar la lógica anterior
+      status: (scheduledInvoice.status as 'Pendiente' | 'Pagada' | 'Programada') || 
+              (scheduledInvoice.is_active ? "Programada" : "Pendiente"),
+      email: scheduledInvoice.email,
+      amount: scheduledInvoice.amount,
+      frequency: scheduledInvoice.frequency as 'monthly' | 'biweekly',
+      concept: scheduledInvoice.concept,
+      date: formattedDate
+    };
+  };
   
   // Función para cargar facturas desde Supabase
   const loadInvoices = React.useCallback(async () => {
@@ -121,30 +138,30 @@ export default function Home() {
       const currentInvoice = invoices.find(inv => inv.id === invoiceId);
       if (!currentInvoice) return;
       
-      // Determinar nuevo estado
-      const newIsActive = currentInvoice.status !== "En Proceso";
-      
-      // Actualizar en Supabase
-      const { error } = await supabase
-        .from('scheduled_invoices')
-        .update({ is_active: newIsActive })
-        .eq('id', invoiceId);
-      
-      if (error) {
-        console.error('Error actualizando factura:', error);
+      // Solo permitir toggle entre "Pagada" y "Pendiente" para facturas ya enviadas
+      // Las facturas "Programadas" no se pueden marcar como pagadas hasta que se envíen
+      if (currentInvoice.status === "Programada") {
+        console.log('No se puede marcar como pagada una factura programada que aún no se ha enviado');
         return;
       }
+      
+      // Alternar entre "Pagada" y "Pendiente"
+      const newStatus = currentInvoice.status === "Pagada" ? "Pendiente" : "Pagada";
+      
+      // Actualizar en la base de datos
+      await dbManager.updateInvoiceStatus(invoiceId, newStatus);
       
       // Actualizar estado local
       setInvoices(prevInvoices => 
         prevInvoices.map(invoice => {
           if (invoice.id === invoiceId) {
-            const newStatus = newIsActive ? "En Proceso" : "Sin Pago";
             return { ...invoice, status: newStatus };
           }
           return invoice;
         })
       );
+      
+      console.log(`Estado de factura ${invoiceId} cambiado a: ${newStatus}`);
     } catch (error) {
       console.error('Error actualizando factura:', error);
     }
@@ -180,6 +197,11 @@ export default function Home() {
     defaultColumn: {
       // @ts-expect-error - El tipo FilterFnOption necesita ser ignorado aquí
       filterFn: 'fuzzy',
+    },
+    initialState: {
+      pagination: {
+        pageSize: 5, // Solo 5 filas por página para mejor estética
+      },
     },
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),

@@ -1,6 +1,6 @@
 export type Invoice = {
   id: string;
-  status: "Pagado" | "En Proceso" | "Sin Pago";
+  status: "Pagada" | "Pendiente" | "Programada";
   email: string;
   amount: number;
   frequency: "monthly" | "biweekly";
@@ -10,11 +10,11 @@ export type Invoice = {
 
 export const sampleInvoices: Invoice[] = [
   // ... tus datos de ejemplo ...
-  { id: "inv-001", status: "Pagado", email: "ken99@example.com", amount: 316.00, frequency: "monthly", concept: "Ahorro personal", date: "2023-10-15" },
-  { id: "inv-002", status: "Pagado", email: "abe45@example.com", amount: 242.00, frequency: "biweekly", concept: "Fondo de emergencia", date: "2023-10-01" },
-  { id: "inv-003", status: "Sin Pago", email: "monserrat44@example.com", amount: 837.00, frequency: "monthly", concept: "Inversión", date: "2023-11-15" },
-  { id: "inv-004", status: "Pagado", email: "silas22@example.com", amount: 874.00, frequency: "monthly", concept: "Educación", date: "2023-11-01" },
-  { id: "inv-005", status: "Sin Pago", email: "carmella@example.com", amount: 721.00, frequency: "biweekly", concept: "Viajes", date: "2023-12-01" },
+  { id: "inv-001", status: "Pagada", email: "ken99@example.com", amount: 316.00, frequency: "monthly", concept: "Ahorro personal", date: "2023-10-15" },
+  { id: "inv-002", status: "Pagada", email: "abe45@example.com", amount: 242.00, frequency: "biweekly", concept: "Fondo de emergencia", date: "2023-10-01" },
+  { id: "inv-003", status: "Pendiente", email: "monserrat44@example.com", amount: 837.00, frequency: "monthly", concept: "Inversión", date: "2023-11-15" },
+  { id: "inv-004", status: "Pagada", email: "silas22@example.com", amount: 874.00, frequency: "monthly", concept: "Educación", date: "2023-11-01" },
+  { id: "inv-005", status: "Pendiente", email: "carmella@example.com", amount: 721.00, frequency: "biweekly", concept: "Viajes", date: "2023-12-01" },
 ];
 
 // Helper de formato (opcional pero útil)
