@@ -116,8 +116,7 @@ export default function Home() {
       setIsLoading(true);
       const { data: scheduledInvoices, error } = await supabase
         .from('scheduled_invoices')
-        .select('*')
-        .order('created_at', { ascending: false });
+        .select('*');
       
       if (error) {
         console.error('Error cargando facturas:', error);
@@ -126,6 +125,15 @@ export default function Home() {
       
       // Convertir las facturas programadas al formato de la tabla
       const convertedInvoices = scheduledInvoices?.map(convertScheduledToInvoice) || [];
+      
+      // Ordenar por fecha de forma descendente (fechas más futuras primero)
+      // Para facturas programadas usa next_send_date, para enviadas usa created_at
+      convertedInvoices.sort((a, b) => {
+        const dateA = new Date(a.date);
+        const dateB = new Date(b.date);
+        return dateB.getTime() - dateA.getTime(); // Orden descendente
+      });
+      
       setInvoices(convertedInvoices);
     } catch (error) {
       console.error('Error cargando facturas:', error);
