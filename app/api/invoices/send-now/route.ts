@@ -62,9 +62,11 @@ export async function POST(request: NextRequest) {
     console.log(`💾 Factura guardada en DB con ID: ${invoiceId}`);
 
     // PASO 2: Crear objeto temporal para envío inmediato
+    // Usar zona horaria de Colombia (UTC-5)
     const currentDate = new Date();
-    const currentDateString = currentDate.toISOString();
-    const currentDateOnly = currentDate.toISOString().split('T')[0];
+    const colombiaDate = new Date(currentDate.toLocaleString("en-US", {timeZone: "America/Bogota"}));
+    const currentDateString = colombiaDate.toISOString();
+    const currentDateOnly = colombiaDate.toISOString().split('T')[0];
     
     const temporaryInvoice: ScheduledInvoice = {
       id: invoiceId, // Usar el ID real de la base de datos
@@ -80,7 +82,7 @@ export async function POST(request: NextRequest) {
       status: 'Pendiente' // Agregamos el campo status requerido
     };
 
-    console.log(`📅 Fecha de envío: ${currentDateOnly} (ignorando día de corte: ${dueDateDay})`);
+    console.log(`📅 Fecha de envío: ${currentDateOnly} (Colombia UTC-5, ignorando día de corte: ${dueDateDay})`);
 
     // PASO 3: Enviar correo inmediatamente
     const emailResult = await emailService.sendInvoiceEmail(temporaryInvoice);

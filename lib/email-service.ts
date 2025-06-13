@@ -25,9 +25,10 @@ class EmailService {
   async sendInvoiceEmail(scheduledInvoice: ScheduledInvoice): Promise<{ success: boolean; error?: string }> {
     try {
       // Convertir ScheduledInvoice a Invoice para el generador de PDF
-      // Para "Enviar Ahora" siempre usar la fecha actual, para programados usar la fecha de envío
+      // Para "Enviar Ahora" siempre usar la fecha actual en zona horaria de Colombia
       const currentDate = new Date();
-      const currentDateString = currentDate.toISOString().slice(0, 10);
+      const colombiaDate = new Date(currentDate.toLocaleString("en-US", {timeZone: "America/Bogota"}));
+      const currentDateString = colombiaDate.toISOString().slice(0, 10);
       
       const invoice: Invoice = {
         id: scheduledInvoice.id,
@@ -41,7 +42,7 @@ class EmailService {
         date: currentDateString
       };
 
-      console.log(`📅 Generando PDF con fecha: ${currentDateString}`);
+      console.log(`📅 Generando PDF con fecha: ${currentDateString} (Colombia UTC-5)`);
 
       // Generar el PDF de la factura
       const pdfData = await generateInvoicePDF(invoice, {
@@ -74,7 +75,7 @@ class EmailService {
       const { data, error } = await this.resend.emails.send({
         from: process.env.EMAIL_FROM || 'onboarding@resend.dev',
         to: [scheduledInvoice.email],
-        subject: `Factura ${scheduledInvoice.concept} - ${new Date().toLocaleDateString('es-CO')}`,
+        subject: `Factura ${scheduledInvoice.concept} - ${colombiaDate.toLocaleDateString('es-CO')}`,
         html: emailHTML,
         attachments: [
           {
@@ -114,6 +115,10 @@ class EmailService {
   }
 
   private generateEmailHTML(scheduledInvoice: ScheduledInvoice): string {
+    // Obtener fecha en zona horaria de Colombia
+    const currentDate = new Date();
+    const colombiaDate = new Date(currentDate.toLocaleString("en-US", {timeZone: "America/Bogota"}));
+    
     const formattedAmount = new Intl.NumberFormat('es-CO', {
       style: 'currency',
       currency: 'COP',
@@ -232,7 +237,7 @@ class EmailService {
               
               <div class="detail-row">
                 <span class="detail-label">Fecha de emisión:</span>
-                <span class="detail-value">${new Date().toLocaleDateString('es-CO', { 
+                <span class="detail-value">${colombiaDate.toLocaleDateString('es-CO', { 
                   weekday: 'long', 
                   year: 'numeric', 
                   month: 'long', 

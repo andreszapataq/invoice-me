@@ -43,7 +43,7 @@ export async function generateInvoicePDF(invoice: Invoice, customerInfo: Custome
   }
   
   const formattedDate = `${date.getDate()} ${getMonthName(date).toLowerCase()} ${date.getFullYear()}`;
-  console.log(`📄 PDF generando con fecha: ${invoice.date} -> ${formattedDate}`);
+  console.log(`📄 PDF generando con fecha: ${invoice.date} -> ${formattedDate} (Colombia UTC-5)`);
   doc.text(formattedDate, pageWidth - 15, 25, { align: 'right' }); // Ajusté la posición Y
   
   // Datos del cliente

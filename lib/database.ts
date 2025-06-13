@@ -50,7 +50,10 @@ class SupabaseDatabaseManager {
   }
 
   async getInvoicesDueToday(): Promise<ScheduledInvoice[]> {
-    const today = new Date().toISOString().split('T')[0];
+    // Usar zona horaria de Colombia (UTC-5)
+    const currentDate = new Date();
+    const colombiaDate = new Date(currentDate.toLocaleString("en-US", {timeZone: "America/Bogota"}));
+    const today = colombiaDate.toISOString().split('T')[0];
 
     const { data, error } = await supabase
       .from('scheduled_invoices')
@@ -64,6 +67,7 @@ class SupabaseDatabaseManager {
       throw new Error(`Error obteniendo facturas vencidas: ${error.message}`);
     }
 
+    console.log(`🔍 [Colombia UTC-5] Verificando facturas para: ${today}`);
     return data || [];
   }
 
@@ -118,8 +122,11 @@ class SupabaseDatabaseManager {
   }
 
   private calculateNextSendDate(frequency: 'monthly' | 'biweekly', dueDateDay: number): string {
-    const now = new Date();
-    const nextDate = new Date();
+    // Usar zona horaria de Colombia (UTC-5)
+    const currentDate = new Date();
+    const colombiaDate = new Date(currentDate.toLocaleString("en-US", {timeZone: "America/Bogota"}));
+    const now = colombiaDate;
+    const nextDate = new Date(colombiaDate);
 
     if (frequency === 'monthly') {
       // Para mensual, ir al próximo mes en el día especificado
@@ -159,7 +166,9 @@ class SupabaseDatabaseManager {
       }
     }
 
-    return nextDate.toISOString().split('T')[0];
+    const result = nextDate.toISOString().split('T')[0];
+    console.log(`📅 [Colombia UTC-5] Próxima fecha calculada: ${result}`);
+    return result;
   }
 
   async deactivateScheduledInvoice(id: string): Promise<void> {
