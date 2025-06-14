@@ -85,6 +85,26 @@ const now = colombiaDate;
 const nextDate = new Date(colombiaDate);
 ```
 
+### **5. 🖥️ Frontend - Tabla de Facturas (`app/page.tsx`)**
+
+#### **5.1 Conversión de fechas para mostrar en tabla:**
+**Antes:**
+```typescript
+// Para facturas ya enviadas, mostrar fecha de creación
+const dateOnly = scheduledInvoice.created_at.split('T')[0];
+const [year, month, day] = dateOnly.split('-').map(Number);
+const localDate = new Date(year, month - 1, day);
+formattedDate = localDate.toISOString().split('T')[0];
+```
+
+**Después:**
+```typescript
+// Para facturas ya enviadas, mostrar fecha de creación en zona horaria de Colombia
+const utcDate = new Date(scheduledInvoice.created_at);
+const colombiaDate = new Date(utcDate.toLocaleString("en-US", {timeZone: "America/Bogota"}));
+formattedDate = colombiaDate.toISOString().split('T')[0];
+```
+
 ---
 
 ## 🎯 **Resultado Final**
@@ -123,7 +143,8 @@ Todos los logs ahora incluyen "(Colombia UTC-5)" para claridad:
 2. `lib/email-service.ts` ✅
 3. `lib/pdf-generator.ts` ✅
 4. `lib/database.ts` ✅
-5. `CORRECCION_FECHAS.md` ✅ (documentación actualizada)
+5. `app/page.tsx` ✅ (frontend - tabla de facturas)
+6. `CORRECCION_FECHAS.md` ✅ (documentación actualizada)
 
 ---
 

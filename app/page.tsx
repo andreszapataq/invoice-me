@@ -85,16 +85,21 @@ export default function Home() {
     let formattedDate: string;
     
     if (status === "Programada" && scheduledInvoice.next_send_date) {
-      // Para facturas programadas, mostrar la fecha de envío programada
-      const [year, month, day] = scheduledInvoice.next_send_date.split('-').map(Number);
-      const localDate = new Date(year, month - 1, day);
-      formattedDate = localDate.toISOString().split('T')[0];
+      // Para facturas programadas, mostrar la fecha de envío programada (ya está en formato de fecha local)
+      formattedDate = scheduledInvoice.next_send_date;
     } else if (scheduledInvoice.created_at) {
-      // Para facturas ya enviadas (Pendiente/Pagada), mostrar fecha de creación
-      const dateOnly = scheduledInvoice.created_at.split('T')[0];
-      const [year, month, day] = dateOnly.split('-').map(Number);
-      const localDate = new Date(year, month - 1, day);
-      formattedDate = localDate.toISOString().split('T')[0];
+      // Para facturas ya enviadas (Pendiente/Pagada), mostrar fecha de creación en zona horaria de Colombia
+      const utcDate = new Date(scheduledInvoice.created_at);
+      
+      // Usar la API estándar de JavaScript para zona horaria (más robusta)
+      const colombiaDateString = utcDate.toLocaleDateString('en-CA', {
+        timeZone: 'America/Bogota'  // Zona horaria de Colombia
+      });
+      
+      formattedDate = colombiaDateString; // Ya está en formato YYYY-MM-DD
+      
+      // Debug log
+      console.log(`🔍 Conversión fecha: UTC ${scheduledInvoice.created_at} -> Colombia ${formattedDate}`);
     } else {
       formattedDate = new Date().toISOString().split('T')[0];
     }
