@@ -35,24 +35,35 @@ export async function GET(request: NextRequest) {
       try {
         console.log(`📤 [CRON] Procesando factura: ${invoice.concept} para ${invoice.email}`);
         
-        // Enviar el correo
+        // PASO 1: Crear registro histórico antes del envío
+        const historyRecordId = await dbManager.createInvoiceHistoryRecord(invoice);
+        console.log(`📋 [CRON] Registro histórico creado: ${historyRecordId}`);
+        
+        // PASO 2: Enviar el correo
         const result = await emailService.sendInvoiceEmail(invoice);
         
         if (result.success) {
-          // Actualizar la fecha de último envío y calcular próxima fecha
+          // PASO 3: Actualizar la factura programada original para próximo envío
           await dbManager.updateLastSent(invoice.id);
           await dbManager.logEmailSent(invoice.id, invoice.email, 'success');
           
           console.log(`✅ [CRON] Factura enviada exitosamente a ${invoice.email}`);
+          console.log(`📅 [CRON] Próximo envío programado para la factura original`);
+          console.log(`📋 [CRON] Registro histórico disponible para seguimiento de pago`);
           successCount++;
           results.push({
             id: invoice.id,
             email: invoice.email,
             concept: invoice.concept,
-            status: 'success'
+            status: 'success',
+            historyRecordId: historyRecordId
           });
         } else {
-          // Registrar el error
+          // Si falla el envío, eliminar el registro histórico
+          console.log(`❌ [CRON] Error enviando factura, eliminando registro histórico...`);
+          await dbManager.deleteInvoice(historyRecordId);
+          
+          // Registrar el error en la factura original
           await dbManager.logEmailSent(invoice.id, invoice.email, 'failed', result.error);
           console.error(`❌ [CRON] Error enviando factura a ${invoice.email}: ${result.error}`);
           errorCount++;
