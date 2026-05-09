@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { LogOut } from "lucide-react";
+import { Loader2, LogOut } from "lucide-react";
 
 import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,7 @@ import {
 
 export function Header() {
   const [email, setEmail] = React.useState<string | null>(null);
+  const [isSigningOut, setIsSigningOut] = React.useState(false);
 
   React.useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -39,15 +40,25 @@ export function Header() {
             {email && <TooltipContent>{email}</TooltipContent>}
           </Tooltip>
         </TooltipProvider>
-        <form action="/auth/sign-out" method="post">
+        <form
+          action="/auth/sign-out"
+          method="post"
+          onSubmit={() => setIsSigningOut(true)}
+        >
           <Button
             type="submit"
             variant="outline"
             size="icon"
-            aria-label="Cerrar sesión"
+            aria-label={isSigningOut ? "Cerrando sesión" : "Cerrar sesión"}
             title="Cerrar sesión"
+            disabled={isSigningOut}
+            aria-busy={isSigningOut}
           >
-            <LogOut className="size-4" />
+            {isSigningOut ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : (
+              <LogOut className="size-4" />
+            )}
           </Button>
         </form>
       </div>

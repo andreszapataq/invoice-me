@@ -104,19 +104,18 @@ export const createColumns = (
     header: "Estado",
     cell: ({ row }) => {
       const status = row.getValue("status") as string;
-      
-      // Determinar el variant del badge según el estado
-      let variant: "default" | "secondary" | "outline" = "secondary";
-      if (status === "Pagada") {
-        variant = "default";
-      } else if (status === "Pendiente") {
-        variant = "outline";
-      } else if (status === "Programada") {
-        variant = "secondary";
-      }
-      
+
+      const statusStyles: Record<string, string> = {
+        Pagada:
+          "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-300",
+        Pendiente:
+          "border-red-200 bg-red-50 text-red-700 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-300",
+        Programada:
+          "border-transparent bg-secondary text-secondary-foreground",
+      };
+
       return (
-        <Badge variant={variant}>
+        <Badge variant="outline" className={statusStyles[status]}>
           {status}
         </Badge>
       );
