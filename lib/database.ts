@@ -1,7 +1,10 @@
+import type { SupabaseClient } from '@supabase/supabase-js';
 import { supabase, ScheduledInvoice } from './supabase';
+import type { Database } from './database.types';
 
-class SupabaseDatabaseManager {
-  
+export class SupabaseDatabaseManager {
+  constructor(private client: SupabaseClient<Database> = supabase) {}
+
   async createScheduledInvoice(invoice: Omit<ScheduledInvoice, 'id' | 'created_at' | 'next_send_date'>): Promise<string> {
     const nextSendDate = this.calculateNextSendDate(invoice.frequency as 'monthly' | 'biweekly', invoice.due_date_day);
     
@@ -10,7 +13,7 @@ class SupabaseDatabaseManager {
     // Inactiva = Pendiente (ya se envió o está esperando pago)
     const status = invoice.is_active ? 'Programada' : 'Pendiente';
 
-    const { data, error } = await supabase
+    const { data, error } = await this.client
       .from('scheduled_invoices')
       .insert({
         email: invoice.email,
@@ -35,7 +38,7 @@ class SupabaseDatabaseManager {
   }
 
   async getActiveScheduledInvoices(): Promise<ScheduledInvoice[]> {
-    const { data, error } = await supabase
+    const { data, error } = await this.client
       .from('scheduled_invoices')
       .select('*')
       .eq('is_active', true)
@@ -51,7 +54,7 @@ class SupabaseDatabaseManager {
 
   // Nuevo método para obtener TODAS las facturas (activas e inactivas)
   async getAllInvoices(): Promise<ScheduledInvoice[]> {
-    const { data, error } = await supabase
+    const { data, error } = await this.client
       .from('scheduled_invoices')
       .select('*')
       .order('created_at', { ascending: false });
@@ -70,7 +73,7 @@ class SupabaseDatabaseManager {
     const colombiaDate = new Date(currentDate.toLocaleString("en-US", {timeZone: "America/Bogota"}));
     const today = colombiaDate.toISOString().split('T')[0];
 
-    const { data, error } = await supabase
+    const { data, error } = await this.client
       .from('scheduled_invoices')
       .select('*')
       .eq('is_active', true)
@@ -88,7 +91,7 @@ class SupabaseDatabaseManager {
 
   async updateLastSent(id: string): Promise<void> {
     // Primero obtener la factura actual para calcular la próxima fecha
-    const { data: invoice, error: fetchError } = await supabase
+    const { data: invoice, error: fetchError } = await this.client
       .from('scheduled_invoices')
       .select('*')
       .eq('id', id)
@@ -106,7 +109,7 @@ class SupabaseDatabaseManager {
     const now = new Date().toISOString();
     const nextSendDate = this.calculateNextSendDate(invoice.frequency as 'monthly' | 'biweekly', invoice.due_date_day);
 
-    const { error } = await supabase
+    const { error } = await this.client
       .from('scheduled_invoices')
       .update({
         last_sent: now,
@@ -127,7 +130,7 @@ class SupabaseDatabaseManager {
     const colombiaDate = new Date(currentDate.toLocaleString("en-US", {timeZone: "America/Bogota"}));
     const colombiaDateString = colombiaDate.toISOString();
     
-    const { data, error } = await supabase
+    const { data, error } = await this.client
       .from('scheduled_invoices')
       .insert({
         email: originalInvoice.email,
@@ -162,7 +165,7 @@ class SupabaseDatabaseManager {
     const specificDateTime = new Date(specificDate + 'T12:00:00-05:00'); // Mediodía Colombia
     const colombiaDateString = specificDateTime.toISOString();
     
-    const { data, error } = await supabase
+    const { data, error } = await this.client
       .from('scheduled_invoices')
       .insert({
         email: originalInvoice.email,
@@ -189,7 +192,7 @@ class SupabaseDatabaseManager {
   }
 
   async logEmailSent(scheduledInvoiceId: string, email: string, status: 'success' | 'failed', errorMessage?: string): Promise<void> {
-    const { error } = await supabase
+    const { error } = await this.client
       .from('email_logs')
       .insert({
         scheduled_invoice_id: scheduledInvoiceId,
@@ -255,7 +258,7 @@ class SupabaseDatabaseManager {
   }
 
   async deactivateScheduledInvoice(id: string): Promise<void> {
-    const { error } = await supabase
+    const { error } = await this.client
       .from('scheduled_invoices')
       .update({ is_active: false })
       .eq('id', id);
@@ -267,7 +270,7 @@ class SupabaseDatabaseManager {
   }
 
   async updateInvoiceStatus(id: string, status: 'Pendiente' | 'Pagada' | 'Programada'): Promise<void> {
-    const { error } = await supabase
+    const { error } = await this.client
       .from('scheduled_invoices')
       .update({ status: status })
       .eq('id', id);
@@ -280,7 +283,7 @@ class SupabaseDatabaseManager {
 
   // Método para eliminar una factura (usado cuando falla el envío de un registro histórico)
   async deleteInvoice(id: string): Promise<void> {
-    const { error } = await supabase
+    const { error } = await this.client
       .from('scheduled_invoices')
       .delete()
       .eq('id', id);

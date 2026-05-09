@@ -1,5 +1,10 @@
-import { dbManager } from './database';
+import { SupabaseDatabaseManager } from './database';
+import { supabaseAdmin } from './supabase/admin';
 import { emailService } from './email-service';
+
+// El scheduler local corre en el servidor sin sesión de usuario, así que usa
+// service role para bypassar RLS (mismo modelo que el cron de Vercel).
+const dbManager = new SupabaseDatabaseManager(supabaseAdmin);
 
 class SchedulerService {
   private intervals: Map<string, NodeJS.Timeout> = new Map();

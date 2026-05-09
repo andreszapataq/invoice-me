@@ -1,10 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { emailService } from '@/lib/email-service';
-import { dbManager } from '@/lib/database';
+import { SupabaseDatabaseManager } from '@/lib/database';
+import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { ScheduledInvoice } from '@/lib/supabase';
 
 export async function POST(request: NextRequest) {
   try {
+    const supabase = await createSupabaseServerClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+    }
+    const dbManager = new SupabaseDatabaseManager(supabase);
+
     const body = await request.json();
     
     // Validar datos requeridos

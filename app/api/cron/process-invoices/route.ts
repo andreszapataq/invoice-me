@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { dbManager } from '@/lib/database';
+import { SupabaseDatabaseManager } from '@/lib/database';
+import { supabaseAdmin } from '@/lib/supabase/admin';
 import { emailService } from '@/lib/email-service';
 
 export async function GET(request: NextRequest) {
@@ -9,6 +10,9 @@ export async function GET(request: NextRequest) {
     if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    // El cron usa service role para bypassar RLS (no hay sesión de usuario)
+    const dbManager = new SupabaseDatabaseManager(supabaseAdmin);
 
     console.log('🚀 [CRON] Iniciando procesamiento de facturas programadas...');
     
