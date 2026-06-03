@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Commands
 
-- `npm run dev` — start Next.js dev server (port 3000). En desarrollo, [lib/scheduler.ts](lib/scheduler.ts) se auto-inicia 5 s después y consulta facturas vencidas cada 60 s.
+- `npm run dev` — start Next.js dev server (port 3000). En desarrollo, [instrumentation.ts](instrumentation.ts) importa [lib/scheduler.ts](lib/scheduler.ts) al arrancar el server, que se auto-inicia 5 s después y consulta facturas vencidas cada 60 s.
 - `npm run build` — production build.
 - `npm start` — run the production build.
 - `npm run lint` — `next lint` (ESLint flat config en [eslint.config.mjs](eslint.config.mjs)).
@@ -74,7 +74,7 @@ Esto significa que **un envío programado deja dos filas**: la programada (sigue
 
 ### Scheduler local vs Vercel Cron
 
-- En **dev**, [lib/scheduler.ts](lib/scheduler.ts) corre `setInterval` cada 60 s dentro del proceso de Next.js. Útil para iterar, **no se ejecuta en producción**.
+- En **dev**, [lib/scheduler.ts](lib/scheduler.ts) corre `setInterval` cada 60 s dentro del proceso de Next.js. Su arranque depende de que algo importe el módulo: [instrumentation.ts](instrumentation.ts) lo hace en el hook `register()` de Next.js, pero **solo cuando `NEXT_RUNTIME === 'nodejs'` y `NODE_ENV === 'development'`**. Útil para iterar, **no se ejecuta en producción**.
 - En **prod**, [vercel.json](vercel.json) define un cron diario que pega a `/api/cron/process-invoices`. Cualquier cambio al schedule se hace ahí.
 
 ## Convención: zona horaria Colombia (UTC-5)
