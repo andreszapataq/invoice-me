@@ -192,11 +192,28 @@ export default function Home() {
   const refreshInvoices = React.useCallback(() => {
     loadInvoices();
   }, [loadInvoices]);
-  
-  // Crear las columnas con la función de cambio de estado
+
+  // Función para eliminar una factura
+  const deleteInvoice = React.useCallback(async (invoiceId: string) => {
+    // Actualización optimista: quitar la fila de inmediato
+    const previous = invoices;
+    setInvoices((prev) => prev.filter((invoice) => invoice.id !== invoiceId));
+
+    try {
+      await dbManager.deleteInvoice(invoiceId);
+      console.log(`Factura ${invoiceId} eliminada`);
+    } catch (error) {
+      console.error("Error eliminando factura:", error);
+      // Revertir si falla el borrado en la base de datos
+      setInvoices(previous);
+      throw error;
+    }
+  }, [invoices]);
+
+  // Crear las columnas con las funciones de cambio de estado y eliminación
   const tableColumns = React.useMemo(
-    () => createColumns(toggleInvoiceStatus), 
-    [toggleInvoiceStatus]
+    () => createColumns(toggleInvoiceStatus, deleteInvoice),
+    [toggleInvoiceStatus, deleteInvoice]
   );
 
   // Estados para la tabla (manejados aquí)

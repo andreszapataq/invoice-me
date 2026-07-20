@@ -1,24 +1,18 @@
 "use client";
 
 import { ColumnDef } from "@tanstack/react-table";
-import { ArrowUpDown, MoreHorizontal } from "lucide-react";
+import { ArrowUpDown } from "lucide-react";
 
-import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
+import { InvoiceActionsCell } from "@/components/InvoiceActionsCell";
 
 import { Invoice, formatCurrency } from "@/lib/data";
 
-// Función para crear las columnas, ahora recibe una función para actualizar el estado
+// Función para crear las columnas, ahora recibe funciones para actualizar estado y eliminar
 export const createColumns = (
-  toggleStatus: (invoiceId: string) => void
+  toggleStatus: (invoiceId: string) => void,
+  deleteInvoice: (invoiceId: string) => Promise<void>
 ): ColumnDef<Invoice>[] => [
   {
     id: "select",
@@ -129,32 +123,18 @@ export const createColumns = (
   {
     id: "actions",
     enableHiding: false,
-    cell: ({ row }) => {
-      const invoice = row.original;
-      const isPaid = invoice.status === "Pagada";
-      
-      return (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="size-8 p-0">
-              <span className="sr-only">Open menu</span>
-              <MoreHorizontal className="size-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Acciones</DropdownMenuLabel>
-            <DropdownMenuItem
-              onClick={() => toggleStatus(invoice.id)}
-              className={isPaid ? "text-red-600" : "text-green-600"}
-            >
-              {isPaid ? "Marcar como Pendiente" : "Marcar como Pagada"}
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      );
-    },
+    cell: ({ row }) => (
+      <InvoiceActionsCell
+        invoice={row.original}
+        onToggleStatus={toggleStatus}
+        onDelete={deleteInvoice}
+      />
+    ),
   },
 ];
 
 // Exportamos la versión original para compatibilidad con código existente
-export const columns = createColumns(() => {});
+export const columns = createColumns(
+  () => {},
+  async () => {}
+);
