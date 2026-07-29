@@ -13,7 +13,7 @@ No hay framework de tests configurado.
 
 ## Stack
 
-Next.js 15 (App Router) + React 19 + TypeScript + Tailwind 4 + shadcn/ui (Radix). Path alias `@/*` apunta a la raíz. Backend on-demand via API routes; persistencia en Supabase; correos con Resend; PDFs con jsPDF + html2canvas; scheduling productivo con Vercel Cron.
+Next.js 15 (App Router) + React 19 + TypeScript + Tailwind 4 + shadcn/ui (Radix). Path alias `@/*` apunta a la raíz. Backend on-demand via API routes; persistencia en Supabase; correos con Resend; PDFs con jsPDF; scheduling productivo con Supabase Cron (pg_cron + pg_net).
 
 ## Variables de entorno
 
@@ -23,7 +23,7 @@ Necesarias en `.env.local` (dev) y en Vercel (prod):
 - `SUPABASE_SERVICE_ROLE_KEY` — server-only, usado por [lib/supabase/admin.ts](lib/supabase/admin.ts) para que el cron y el scheduler local **bypassen RLS**. Nunca exponer en cliente.
 - `RESEND_API_KEY` — si falta, [lib/email-service.ts](lib/email-service.ts) entra en **modo simulación** (loguea pero no envía). El endpoint [app/api/email/check-config/route.ts](app/api/email/check-config/route.ts) reporta este estado al frontend.
 - `EMAIL_FROM` — remitente; default `onboarding@resend.dev`.
-- `CRON_SECRET` — el endpoint cron rechaza requests cuyo header `Authorization` no sea `Bearer ${CRON_SECRET}`.
+- `CRON_SECRET` — el endpoint cron rechaza requests cuyo header `Authorization` no sea `Bearer ${CRON_SECRET}`. En prod lo envía Supabase Cron (guardado en Vault como `invoice_cron_secret`); debe coincidir con este env de Vercel.
 - `NODE_ENV` — controla si el scheduler local de [lib/scheduler.ts](lib/scheduler.ts) se inicia (solo en `development`).
 
 ## Autenticación
@@ -58,7 +58,7 @@ Toda la lógica de facturas vive en la tabla `scheduled_invoices` (Supabase). El
 **Programación** ([app/api/invoices/schedule/route.ts](app/api/invoices/schedule/route.ts)):
 1. Inserta una fila con `is_active: true`, `status: 'Programada'`. `next_send_date` se calcula en `dbManager.calculateNextSendDate`.
 
-**Cron de envío** ([app/api/cron/process-invoices/route.ts](app/api/cron/process-invoices/route.ts), [vercel.json](vercel.json) → `0 14 * * *` UTC = 9 AM Colombia):
+**Cron de envío** ([app/api/cron/process-invoices/route.ts](app/api/cron/process-invoices/route.ts), disparado por Supabase Cron → `0 14 * * *` UTC = 9 AM Colombia):
 1. `getInvoicesDueToday()` devuelve facturas activas con `next_send_date <= hoy`.
 2. Para cada una: **se crea primero un registro histórico** (`createInvoiceHistoryRecord`), luego se envía el correo. Si el envío falla, el registro histórico se **elimina** (`deleteInvoice`) para no dejar trazabilidad inconsistente.
 3. En éxito: la fila programada original se actualiza con nuevo `next_send_date`.
@@ -72,10 +72,10 @@ Esto significa que **un envío programado deja dos filas**: la programada (sigue
 - El toggle de status (Pendiente ↔ Pagada) llama a `dbManager.updateInvoiceStatus` y **rechaza filas en estado `'Programada'`** (no se puede marcar como pagada algo que aún no se envió).
 - El formulario vive en un `Sheet` lateral ([components/InvoiceForm.tsx](components/InvoiceForm.tsx)) con dos acciones: enviar ahora y programar.
 
-### Scheduler local vs Vercel Cron
+### Scheduler local vs Supabase Cron
 
 - En **dev**, [lib/scheduler.ts](lib/scheduler.ts) corre `setInterval` cada 60 s dentro del proceso de Next.js. Su arranque depende de que algo importe el módulo: [instrumentation.ts](instrumentation.ts) lo hace en el hook `register()` de Next.js, pero **solo cuando `NEXT_RUNTIME === 'nodejs'` y `NODE_ENV === 'development'`**. Útil para iterar, **no se ejecuta en producción**.
-- En **prod**, [vercel.json](vercel.json) define un cron diario que pega a `/api/cron/process-invoices`. Cualquier cambio al schedule se hace ahí.
+- En **prod**, el scheduler es **Supabase Cron** (`pg_cron` + `pg_net`), no Vercel Cron. El job `process-invoices-daily` (schedule `0 14 * * *`, DB en UTC) hace `net.http_post` a `/api/cron/process-invoices` con el header `Authorization: Bearer <invoice_cron_secret>`, leyendo URL y secret desde Supabase Vault (`invoice_cron_url`, `invoice_cron_secret`). Se eligió sobre Vercel Cron porque este último dejaba de dispararse entre deploys. Cambios al schedule: `cron.schedule('process-invoices-daily', ...)` (upsert por nombre); ver runs en `cron.job_run_details`. `vercel.json` ya no define crons.
 
 ## Convención: zona horaria Colombia (UTC-5)
 
