@@ -208,48 +208,22 @@ export class SupabaseDatabaseManager {
   }
 
   private calculateNextSendDate(frequency: 'monthly' | 'biweekly', dueDateDay: number): string {
-    // Usar zona horaria de Colombia (UTC-5)
-    const currentDate = new Date();
-    const colombiaDate = new Date(currentDate.toLocaleString("en-US", {timeZone: "America/Bogota"}));
-    const now = colombiaDate;
-    const nextDate = new Date(colombiaDate);
+    // "Hoy" en Colombia como componentes Y-M-D (sin hora), independiente de la
+    // zona horaria en la que corra el proceso (Vercel UTC, dev local UTC-5, etc.).
+    const todayColombia = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Bogota' }); // "YYYY-MM-DD"
+    const [year, month] = todayColombia.split('-').map(Number); // month es 1-12
 
-    if (frequency === 'monthly') {
-      // Para mensual, ir al próximo mes en el día especificado
-      nextDate.setMonth(now.getMonth() + 1);
-      nextDate.setDate(dueDateDay);
-      
-      // Si el día especificado no existe en el próximo mes, ir al último día del mes
-      if (nextDate.getDate() !== dueDateDay) {
-        nextDate.setDate(0); // Último día del mes anterior
-      }
-    } else {
-      // Para quincenal
-      if (dueDateDay === 1) {
-        // Primera quincena del próximo mes
-        nextDate.setMonth(now.getMonth() + 1);
-        nextDate.setDate(1);
-      } else {
-        // Segunda quincena (día 16) del próximo mes
-        nextDate.setMonth(now.getMonth() + 1);
-        nextDate.setDate(16);
-      }
-    }
+    // Anclamos a mediodía UTC: así setUTC*/toISOString nunca cambian de día por el
+    // offset horario. Partir del día 1 evita el overflow de setUTCMonth.
+    const nextDate = new Date(Date.UTC(year, month - 1, 1, 12, 0, 0));
+    nextDate.setUTCMonth(nextDate.getUTCMonth() + 1);
 
-    // Si la fecha calculada ya pasó este mes, pasar al siguiente período
-    if (nextDate <= now) {
-      if (frequency === 'monthly') {
-        nextDate.setMonth(nextDate.getMonth() + 1);
-      } else {
-        // Para quincenal, si estamos en la primera quincena, ir a la segunda
-        // Si estamos en la segunda, ir al primer día del próximo mes
-        if (dueDateDay === 1) {
-          nextDate.setDate(16);
-        } else {
-          nextDate.setMonth(nextDate.getMonth() + 1);
-          nextDate.setDate(1);
-        }
-      }
+    const targetDay = frequency === 'monthly' ? dueDateDay : (dueDateDay === 1 ? 1 : 16);
+    nextDate.setUTCDate(targetDay);
+
+    // Si el día no existe en ese mes (p.ej. 31 en un mes de 30), usar el último día.
+    if (nextDate.getUTCDate() !== targetDay) {
+      nextDate.setUTCDate(0);
     }
 
     const result = nextDate.toISOString().split('T')[0];
